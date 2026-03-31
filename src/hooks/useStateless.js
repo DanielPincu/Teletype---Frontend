@@ -21,9 +21,18 @@ export function useStateless() {
   ])
   const [input, setInput] = useState('')
   const [roomId, setRoomId] = useState('')
+  const isSearching = useRef(false)
 
   const log = (text, type = 'system') =>
-    setMessages(prev => [...prev, { text, type }])
+    setMessages(prev => [
+      ...prev,
+      {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        time: new Date().toLocaleTimeString(),
+        text,
+        type
+      }
+    ])
 
   useEffect(() => {
 
@@ -31,6 +40,7 @@ export function useStateless() {
       async (msg) => {
         switch (msg.type) {
           case 'peer-found': {
+            isSearching.current = false
             log('PEER FOUND → ESTABLISHING SECURE LINK...')
             setStatus('connecting')
 
@@ -48,7 +58,21 @@ export function useStateless() {
                   candidate: c
                 })
               },
-              onState: (s) => setStatus(s)
+              onState: (s) => {
+                setStatus(s)
+
+                if (s === 'connected' || s === 'connecting') return
+
+                if (s === 'disconnected' || s === 'failed' || s === 'closed') {
+                  log('SIGNAL LOST (LINK FAILURE)')
+
+                  if (localRef.current) localRef.current.srcObject = null
+                  if (remoteRef.current) remoteRef.current.srcObject = null
+
+                  close()
+                  setStatus('lost')
+                }
+              }
             }, !!msg.initiator)
 
             const stream = await initMedia()
@@ -104,9 +128,14 @@ export function useStateless() {
           }
 
           case 'peer-left': {
-            console.log('peer-left received')
-            log('SIGNAL LOST (REMOTE UNIT DISCONNECTED)')
+            isSearching.current = false
+
+            log('REMOTE UNIT DISCONNECTED')
             setStatus('disconnected')
+
+            if (localRef.current) localRef.current.srcObject = null
+            if (remoteRef.current) remoteRef.current.srcObject = null
+
             close()
             break
           }
@@ -114,26 +143,76 @@ export function useStateless() {
       },
       () => {
         log('LINK TO COMMAND NODE ESTABLISHED')
-        setStatus('connected')
+        // keep UI in idle state; this is WS connected, not peer connected
+        setStatus('idle')
       },
       () => {
+        isSearching.current = false
+
         log('SIGNAL LOST (NETWORK FAILURE)')
         setStatus('lost')
+
+        if (localRef.current) localRef.current.srcObject = null
+        if (remoteRef.current) remoteRef.current.srcObject = null
       }
     )
   }, [])
 
   const startRandom = () => {
+    if (isSearching.current) return
+
+    isSearching.current = true
+
+    // reset rtc immediately so new connection can form
+    close()
+
+    // notify backend after
+    sendWS({ type: 'leave' })
+
+    if (localRef.current) localRef.current.srcObject = null
+    if (remoteRef.current) remoteRef.current.srcObject = null
+
     log('SCANNING FREQUENCIES...')
     setStatus('searching')
-    sendWS({ type: 'find-peer' })
+
+    setTimeout(() => {
+      sendWS({ type: 'find-peer' })
+    }, 100)
   }
 
   const joinRoom = () => {
     if (!roomId) return
+
+    isSearching.current = false
+
+    close()
+    sendWS({ type: 'leave' })
+
+    if (localRef.current) localRef.current.srcObject = null
+    if (remoteRef.current) remoteRef.current.srcObject = null
+
     log(`TUNING TO CHANNEL ${roomId}...`)
     setStatus('joining-room')
-    sendWS({ type: 'join-room', roomId })
+
+    setTimeout(() => {
+      sendWS({ type: 'join-room', roomId })
+    }, 200)
+  }
+
+  const cancelJoin = () => {
+    log('CANCELING CHANNEL TUNING...')
+
+    // stop waiting state
+    setStatus('idle')
+
+    // notify backend to leave room queue
+    sendWS({ type: 'leave' })
+
+    // clear streams just in case
+    if (localRef.current) localRef.current.srcObject = null
+    if (remoteRef.current) remoteRef.current.srcObject = null
+
+    close()
   }
 
   const sendMessage = () => {
@@ -144,15 +223,22 @@ export function useStateless() {
   }
 
   const terminate = () => {
+    isSearching.current = false
+
     log('CONNECTION TERMINATED BY OPERATOR')
-
+    // send goodbye message to peer before disconnect
+    send('BYE BYE - IM OUT')
+    log('BYE BYE - IM OUT', 'tx')
     sendWS({ type: 'leave' })
-    setStatus('idle')
 
-    // delay close so React can render log first
+    // give WS time to reach backend and notify peer
     setTimeout(() => {
       close()
-    }, 100)
+      setStatus('idle')
+
+      if (localRef.current) localRef.current.srcObject = null
+      if (remoteRef.current) remoteRef.current.srcObject = null
+    }, 600)
   }
 
   return {
@@ -166,7 +252,8 @@ export function useStateless() {
     setRoomId,
     startRandom,
     joinRoom,
+    cancelJoin,
     sendMessage,
-    terminate,
+    terminate
   }
 }

@@ -13,17 +13,40 @@ export default function App() {
     setRoomId,
     startRandom,
     joinRoom,
+    cancelJoin,
     sendMessage,
     terminate
   } = useStateless()
 
   const chatRef = React.useRef(null)
+  const [joinError, setJoinError] = React.useState(false)
+  const [isJoiningUI, setIsJoiningUI] = React.useState(false)
 
   React.useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight
     }
   }, [messages])
+
+  React.useEffect(() => {
+    if (status === 'connected' || status === 'idle') {
+      setIsJoiningUI(false)
+    }
+  }, [status])
+
+  const handleJoin = () => {
+    if (!roomId || !roomId.trim()) {
+      setJoinError(true)
+
+      setTimeout(() => {
+        setJoinError(false)
+      }, 1500)
+
+      return
+    }
+    setIsJoiningUI(true)
+    joinRoom()
+  }
 
   return (
     <div className="min-h-screen bg-black text-green-500 font-mono relative">
@@ -52,36 +75,131 @@ export default function App() {
         </div>
 
         {/* CONTROLS */}
-        <div className="border-2 border-green-800 p-4 flex flex-wrap gap-4 justify-center">
+        <div className="border-2 border-green-800 p-6 flex flex-col items-center gap-6">
 
-          <button
-            onClick={startRandom}
-            disabled={status === 'searching' || status === 'connecting'}
-            className="border-2 border-green-600 px-6 py-3 hover:bg-green-800/30"
-          >
-            {status === 'searching' ? 'SCANNING...' : 'SCAN_BANDS'}
-          </button>
+          <div className="flex flex-wrap justify-center items-center gap-6">
 
-          <input
-            value={roomId}
-            onChange={(e) => setRoomId(e.target.value)}
-            placeholder="ROOM_ID"
-            className="bg-black border border-green-700 px-3"
-          />
+            <button
+              onClick={startRandom}
+              disabled={status === 'searching' || status === 'connecting' || status === 'connected'}
+              className={`
+                border-2 border-green-600 px-6 py-3 w-56 h-14
+                flex items-center justify-center
+                transition-all duration-300
+                ${status === 'searching' ? 'bg-green-900/40 animate-pulse' : 'hover:bg-green-800/30'} disabled:opacity-40 disabled:cursor-not-allowed
+              `}
+            >
+              <span className="tracking-widest font-bold">
+                {status === 'searching'
+                  ? 'SCANNING ▓▒░'
+                  : status === 'connected'
+                  ? 'LINK_LOCKED'
+                  : 'SCAN_BANDS'}
+              </span>
+            </button>
 
-          <button
-            onClick={joinRoom}
-            className="border-2 border-green-600 px-6 py-3 hover:bg-green-800/30"
-          >
-            JOIN_CHANNEL
-          </button>
+            <div className="flex justify-center items-center gap-4 bg-black/40 px-6 py-3 border border-green-900 rounded-md shadow-[0_0_10px_rgba(0,255,0,0.2)]">
+              {Array.from({ length: 4 }).map((_, i) => {
+                const digit = parseInt(roomId[i] || '0', 10)
 
-          <button
-            onClick={terminate}
-            className="border-2 border-red-800 px-6 py-3 text-red-400 hover:bg-red-900/30"
-          >
-            TERMINATE
-          </button>
+                const updateDigit = (val) => {
+                  const next = roomId.padEnd(4, '0').split('')
+                  next[i] = String((val + 10) % 10)
+                  setRoomId(next.join('').slice(0, 4))
+                  setJoinError(false)
+                }
+
+                return (
+                  <div key={i} className="flex flex-col items-center justify-center gap-0">
+                    <button
+                      onClick={() => updateDigit(digit + 1)}
+                      className="w-10 h-8 flex items-center justify-center text-2xl font-bold bg-black border border-green-700 text-green-400 hover:bg-green-900/30 hover:text-green-200 transition-all duration-150 active:scale-90"
+                    >▲</button>
+
+                    <div
+                      className={`
+                        relative w-14 h-20 flex items-center justify-center
+                        bg-black border rounded-md overflow-hidden
+                        ${joinError
+                          ? 'border-orange-700 shadow-[0_0_10px_rgba(255,120,0,0.7)]'
+                          : 'border-orange-500 shadow-[0_0_12px_rgba(255,140,0,0.6)]'}
+                      `}
+                    >
+
+                      {/* nixie stack */}
+                      <div className="relative flex flex-col items-center justify-center">
+                        {Array.from({ length: 10 }).map((_, n) => (
+                          <span
+                            key={n}
+                            className={`
+                              absolute text-2xl font-bold transition-all duration-300
+                              ${n === digit
+                                ? 'text-orange-300 opacity-100 scale-110 drop-shadow-[0_0_8px_rgba(255,120,0,0.9)]'
+                                : 'text-orange-800 opacity-20 scale-90'}
+                            `}
+                            style={{ transform: `translateY(${(n - digit) * 20}px)` }}
+                          >
+                            {n}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* glass glow */}
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,140,0,0.15),transparent_70%)]" />
+
+                      {/* reflection */}
+                      <div className="absolute inset-0 from-white/5 to-transparent opacity-40" />
+
+                    </div>
+
+                    <button
+                      onClick={() => updateDigit(digit - 1)}
+                      className="w-10 h-8 flex items-center justify-center text-2xl font-bold bg-black border border-green-700 text-green-400 hover:bg-green-900/30 hover:text-green-200 transition-all duration-150 active:scale-90"
+                    >▼</button>
+                  </div>
+                )
+              })}
+            </div>
+
+            <button
+              onClick={(isJoiningUI || status === 'joining-room' || status === 'joining' || status === 'waiting') ? cancelJoin : handleJoin}
+              disabled={status === 'searching' || status === 'connecting'}
+              className={`
+                border-2 px-6 py-3 w-40 h-14
+                flex items-center justify-center
+                transition-all duration-300
+                ${joinError
+                  ? 'border-red-600 text-red-400 bg-red-900/20'
+                  : (isJoiningUI || status === 'joining-room' || status === 'joining' || status === 'waiting')
+                  ? 'border-amber-600 text-amber-400 bg-amber-900/20 animate-pulse'
+                  : 'border-green-600 hover:bg-green-800/30'}
+                disabled:opacity-40 disabled:cursor-not-allowed
+              `}
+            >
+              <span className="tracking-widest font-bold">
+                {(isJoiningUI || status === 'joining-room' || status === 'joining' || status === 'waiting')
+                  ? 'CANCEL'
+                  : status === 'connected'
+                  ? 'Connected'
+                  : 'JOIN_CHANNEL'}
+              </span>
+            </button>
+
+            <button
+              onClick={terminate}
+              disabled={status !== 'connected'}
+              className="
+                border-2 border-red-800 px-6 py-3 w-40 h-14
+                flex items-center justify-center
+                text-red-400 transition-all duration-300
+                hover:bg-red-900/30
+                disabled:opacity-40 disabled:cursor-not-allowed
+              "
+            >
+              <span className="tracking-widest font-bold">TERMINATE</span>
+            </button>
+
+          </div>
         </div>
 
         {/* VIDEO */}
@@ -108,7 +226,7 @@ export default function App() {
               <video ref={remoteRef} autoPlay className="w-full h-full object-cover" />
               {status !== 'connected' && (
                 <div className="absolute inset-0 flex items-center justify-center text-green-700">
-                  AWAITING SIGNAL...
+                  NO SIGNAL / AWAITING LINK
                 </div>
               )}
             </div>
