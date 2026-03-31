@@ -1,4 +1,3 @@
-import { WS_URL } from './config'
 
 let ws = null
 let onMessage = null
@@ -12,7 +11,17 @@ export function connectWS(handleMessage, handleOpen, handleClose) {
   onOpen = handleOpen
   onClose = handleClose
 
-  ws = new WebSocket(WS_URL)
+  const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
+
+  let url
+
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+    url = `${protocol}://127.0.0.1:3000/ws`
+  } else {
+    url = `${protocol}://${location.host}/ws`
+  }
+
+  ws = new WebSocket(url)
 
   ws.onopen = () => {
     onOpen && onOpen()
@@ -29,6 +38,11 @@ export function connectWS(handleMessage, handleOpen, handleClose) {
 
   ws.onclose = () => {
     onClose && onClose()
+
+    // auto reconnect after delay
+    setTimeout(() => {
+      connectWS(onMessage, onOpen, onClose)
+    }, 2000)
   }
 
   ws.onerror = (err) => {
