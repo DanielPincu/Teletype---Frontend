@@ -4,6 +4,30 @@ let peerConnection = null
 let dataChannel = null
 let localStream = null
 
+async function ensureLocalMedia() {
+  if (localStream) {
+    return localStream
+  }
+
+  localStream = await navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: true
+  })
+
+  if (peerConnection) {
+    const senders = peerConnection.getSenders()
+
+    localStream.getTracks().forEach((track) => {
+      const alreadyAdded = senders.some((sender) => sender.track === track)
+      if (!alreadyAdded) {
+        peerConnection.addTrack(track, localStream)
+      }
+    })
+  }
+
+  return localStream
+}
+
 export function createPeer({ onRemote, onData, onIce, onState }, initiator) {
   peerConnection = new RTCPeerConnection(RTC_CONFIG)
 
@@ -39,25 +63,18 @@ function bindDC(onData) {
 }
 
 export async function initMedia() {
-  localStream = await navigator.mediaDevices.getUserMedia({
-    video: true,
-    audio: true
-  })
-
-  localStream.getTracks().forEach((track) => {
-    peerConnection.addTrack(track, localStream)
-  })
-
-  return localStream
+  return ensureLocalMedia()
 }
 
 export async function createOffer() {
+  await ensureLocalMedia()
   const offer = await peerConnection.createOffer()
   await peerConnection.setLocalDescription(offer)
   return peerConnection.localDescription
 }
 
 export async function handleOffer(offer) {
+  await ensureLocalMedia()
   await peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
   const answer = await peerConnection.createAnswer()
   await peerConnection.setLocalDescription(answer)
@@ -86,4 +103,8 @@ export function close() {
   dataChannel?.close()
   localStream?.getTracks().forEach((t) => t.stop())
   peerConnection?.close()
+
+  dataChannel = null
+  localStream = null
+  peerConnection = null
 }
