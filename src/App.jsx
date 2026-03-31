@@ -98,7 +98,7 @@ export default function App() {
               </span>
             </button>
 
-            <div className="flex justify-center items-center gap-4 bg-black/40 px-6 py-3 border border-green-900 rounded-md shadow-[0_0_10px_rgba(0,255,0,0.2)]">
+            <div className={`flex justify-center items-center gap-4 bg-black/40 px-6 py-3 border border-green-900 rounded-md shadow-[0_0_10px_rgba(0,255,0,0.2)] ${status === 'connected' ? 'opacity-60' : ''}`}>
               {Array.from({ length: 4 }).map((_, i) => {
                 const digit = parseInt(roomId[i] || '0', 10)
 
@@ -113,7 +113,8 @@ export default function App() {
                   <div key={i} className="flex flex-col items-center justify-center gap-0">
                     <button
                       onClick={() => updateDigit(digit + 1)}
-                      className="w-10 h-8 flex items-center justify-center text-2xl font-bold bg-black border border-green-700 text-green-400 hover:bg-green-900/30 hover:text-green-200 transition-all duration-150 active:scale-90"
+                      disabled={status === 'connected'}
+                      className="w-10 h-8 flex items-center justify-center text-2xl font-bold bg-black border border-green-700 text-green-400 hover:bg-green-900/30 hover:text-green-200 transition-all duration-150 active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed"
                     >▲</button>
 
                     <div
@@ -154,7 +155,8 @@ export default function App() {
 
                     <button
                       onClick={() => updateDigit(digit - 1)}
-                      className="w-10 h-8 flex items-center justify-center text-2xl font-bold bg-black border border-green-700 text-green-400 hover:bg-green-900/30 hover:text-green-200 transition-all duration-150 active:scale-90"
+                      disabled={status === 'connected'}
+                      className="w-10 h-8 flex items-center justify-center text-2xl font-bold bg-black border border-green-700 text-green-400 hover:bg-green-900/30 hover:text-green-200 transition-all duration-150 active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed"
                     >▼</button>
                   </div>
                 )
