@@ -15,10 +15,13 @@ export default function App() {
     joinRoom,
     cancelJoin,
     sendMessage,
-    terminate
+    terminate,
+    isSharingScreen,
+    toggleScreenShare
   } = useStateless()
 
   const chatRef = React.useRef(null)
+  const remoteContainerRef = React.useRef(null)
   const [joinError, setJoinError] = React.useState(false)
   const [isJoiningUI, setIsJoiningUI] = React.useState(false)
 
@@ -33,6 +36,26 @@ export default function App() {
       setIsJoiningUI(false)
     }
   }, [status])
+
+  const goFullScreen = () => {
+    const el = remoteContainerRef.current
+    if (!el) return
+
+    const isFullscreen =
+      document.fullscreenElement === el ||
+      document.webkitFullscreenElement === el ||
+      document.msFullscreenElement === el
+
+    if (isFullscreen) {
+      if (document.exitFullscreen) document.exitFullscreen()
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen()
+      else if (document.msExitFullscreen) document.msExitFullscreen()
+    } else {
+      if (el.requestFullscreen) el.requestFullscreen()
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
+      else if (el.msRequestFullscreen) el.msRequestFullscreen()
+    }
+  }
 
   const handleJoin = () => {
     if (!roomId || !roomId.trim()) {
@@ -165,7 +188,7 @@ export default function App() {
 
             <button
               onClick={(isJoiningUI || status === 'joining-room' || status === 'joining' || status === 'waiting') ? cancelJoin : handleJoin}
-              disabled={status === 'searching' || status === 'connecting'}
+              disabled={status === 'searching' || status === 'connecting' || status === 'connected'}
               className={`
                 border-2 px-6 py-3 w-40 h-14
                 flex items-center justify-center
@@ -182,7 +205,7 @@ export default function App() {
                 {(isJoiningUI || status === 'joining-room' || status === 'joining' || status === 'waiting')
                   ? 'CANCEL'
                   : status === 'connected'
-                  ? 'Connected'
+                  ? 'CHANNEL_LOCKED'
                   : 'JOIN_CHANNEL'}
               </span>
             </button>
@@ -201,6 +224,24 @@ export default function App() {
               <span className="tracking-widest font-bold">TERMINATE</span>
             </button>
 
+            <button
+              onClick={toggleScreenShare}
+              disabled={status !== 'connected'}
+              className={`
+                border-2 px-6 py-3 w-40 h-14
+                flex items-center justify-center
+                transition-all duration-300
+                ${isSharingScreen
+                  ? 'border-amber-600 text-amber-400 bg-amber-900/30 animate-pulse'
+                  : 'border-green-600 hover:bg-green-800/30'}
+                disabled:opacity-40 disabled:cursor-not-allowed
+              `}
+            >
+              <span className="tracking-widest font-bold">
+                {isSharingScreen ? 'STOP_SHARE' : 'SHARE_SCREEN'}
+              </span>
+            </button>
+
           </div>
         </div>
 
@@ -214,7 +255,7 @@ export default function App() {
             </div>
 
             <div className="border-2 border-green-800 aspect-video relative">
-              <video ref={localRef} autoPlay muted className="w-full h-full object-cover" />
+              <video ref={localRef} autoPlay playsInline muted className="w-full h-full object-cover" />
             </div>
           </div>
 
@@ -224,8 +265,14 @@ export default function App() {
               REMOTE_STATION
             </div>
 
-            <div className="border-2 border-green-800 aspect-video relative">
-              <video ref={remoteRef} autoPlay className="w-full h-full object-cover" />
+            <div ref={remoteContainerRef} className="border-2 border-green-800 aspect-video relative">
+              <video ref={remoteRef} autoPlay playsInline className="w-full h-full object-cover" />
+              <button
+                onClick={goFullScreen}
+                className="absolute bottom-2 right-2 w-8 h-8 flex items-center justify-center border border-green-700 bg-black/70 hover:bg-green-900/40 transition"
+              >
+                <span className="text-green-400 text-lg leading-none">⛶</span>
+              </button>
               {status !== 'connected' && (
                 <div className="absolute inset-0 flex items-center justify-center text-green-700">
                   NO SIGNAL / AWAITING LINK

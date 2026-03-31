@@ -10,8 +10,16 @@ async function ensureLocalMedia() {
   }
 
   localStream = await navigator.mediaDevices.getUserMedia({
-    video: true,
-    audio: true
+    video: {
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+      frameRate: { ideal: 30, max: 60 }
+    },
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true
+    }
   })
 
   if (peerConnection) {
@@ -23,6 +31,17 @@ async function ensureLocalMedia() {
         peerConnection.addTrack(track, localStream)
       }
     })
+
+    // Increase video bitrate for better quality
+    peerConnection.getSenders().forEach((sender) => {
+      if (sender.track && sender.track.kind === 'video') {
+        const params = sender.getParameters()
+        if (!params.encodings) params.encodings = [{}]
+
+        params.encodings[0].maxBitrate = 2500000 // ~2.5 Mbps
+        sender.setParameters(params)
+      }
+    })
   }
 
   return localStream
@@ -30,6 +49,21 @@ async function ensureLocalMedia() {
 
 export function createPeer({ onRemote, onData, onIce, onState }, initiator) {
   peerConnection = new RTCPeerConnection(RTC_CONFIG)
+
+  // Apply bitrate settings once senders are available
+  setTimeout(() => {
+    if (!peerConnection) return
+
+    peerConnection.getSenders().forEach((sender) => {
+      if (sender.track && sender.track.kind === 'video') {
+        const params = sender.getParameters()
+        if (!params.encodings) params.encodings = [{}]
+
+        params.encodings[0].maxBitrate = 2500000
+        sender.setParameters(params)
+      }
+    })
+  }, 500)
 
   peerConnection.onicecandidate = (e) => {
     if (e.candidate) onIce(e.candidate)
@@ -96,6 +130,19 @@ export async function addIce(candidate) {
 export function send(msg) {
   if (dataChannel?.readyState === 'open') {
     dataChannel.send(msg)
+  }
+}
+
+// Replace the video track for screen sharing or camera switching
+export function replaceVideoTrack(newTrack) {
+  if (!peerConnection) return
+
+  const sender = peerConnection
+    .getSenders()
+    .find((s) => s.track && s.track.kind === 'video')
+
+  if (sender) {
+    sender.replaceTrack(newTrack)
   }
 }
 

@@ -8,7 +8,8 @@ import {
   handleAnswer,
   addIce,
   send,
-  close
+  close,
+  replaceVideoTrack
 } from '../rtc'
 
 export function useStateless() {
@@ -21,7 +22,53 @@ export function useStateless() {
   ])
   const [input, setInput] = useState('')
   const [roomId, setRoomId] = useState('')
+  const [isSharingScreen, setIsSharingScreen] = useState(false)
   const isSearching = useRef(false)
+  const toggleScreenShare = async () => {
+    try {
+      if (!isSharingScreen) {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true })
+        const screenTrack = screenStream.getVideoTracks()[0]
+
+        replaceVideoTrack(screenTrack)
+
+        if (localRef.current) {
+          localRef.current.srcObject = screenStream
+        }
+
+        screenTrack.onended = async () => {
+          const camStream = await initMedia()
+          const camTrack = camStream.getVideoTracks()[0]
+
+          replaceVideoTrack(camTrack)
+
+          if (localRef.current) {
+            localRef.current.srcObject = camStream
+          }
+
+          setIsSharingScreen(false)
+        }
+
+        setIsSharingScreen(true)
+        log('SCREEN TRANSMISSION ENABLED')
+      } else {
+        const camStream = await initMedia()
+        const camTrack = camStream.getVideoTracks()[0]
+
+        replaceVideoTrack(camTrack)
+
+        if (localRef.current) {
+          localRef.current.srcObject = camStream
+        }
+
+        setIsSharingScreen(false)
+        log('RETURNED TO CAMERA FEED')
+      }
+    // eslint-disable-next-line no-unused-vars
+    } catch (err) {
+      log('SCREEN SHARE FAILED')
+    }
+  }
 
   const log = (text, type = 'system') =>
     setMessages(prev => [
@@ -254,6 +301,8 @@ export function useStateless() {
     joinRoom,
     cancelJoin,
     sendMessage,
-    terminate
+    terminate,
+    isSharingScreen,
+    toggleScreenShare,
   }
 }
