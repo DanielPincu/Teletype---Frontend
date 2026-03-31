@@ -16,17 +16,22 @@ export function useStateless() {
   const remoteRef = useRef(null)
 
   const [status, setStatus] = useState('idle')
-  const [messages, setMessages] = useState([])
+  const [messages, setMessages] = useState([
+    { text: 'TERMINAL ONLINE', type: 'system' }
+  ])
   const [input, setInput] = useState('')
   const [roomId, setRoomId] = useState('')
 
-  const log = (m) => setMessages(prev => [...prev, m])
+  const log = (text, type = 'system') =>
+    setMessages(prev => [...prev, { text, type }])
 
   useEffect(() => {
+
     connectWS(
       async (msg) => {
         switch (msg.type) {
           case 'peer-found': {
+            log('PEER FOUND → ESTABLISHING SECURE LINK...')
             setStatus('connecting')
 
             createPeer({
@@ -35,7 +40,7 @@ export function useStateless() {
                   remoteRef.current.srcObject = stream
                 }
               },
-              onData: (d) => log('Peer: ' + d),
+              onData: (d) => log(d, 'peer'),
               onIce: (c) => {
                 sendWS({
                   type: 'ice-candidate',
@@ -65,6 +70,7 @@ export function useStateless() {
           }
 
           case 'offer': {
+            log('INCOMING SIGNAL (OFFER RECEIVED)')
             if (!msg.offer) return
 
             const answer = await handleOffer(msg.offer)
@@ -79,6 +85,7 @@ export function useStateless() {
           }
 
           case 'answer': {
+            log('LINK CONFIRMED (HANDSHAKE COMPLETE)')
             if (!msg.answer) return
             await handleAnswer(msg.answer)
             break
@@ -90,25 +97,41 @@ export function useStateless() {
             break
           }
 
+          case 'waiting-in-room': {
+            log('NO SIGNAL DETECTED → STANDING BY...')
+            setStatus('waiting')
+            break
+          }
+
           case 'peer-left': {
+            console.log('peer-left received')
+            log('SIGNAL LOST (REMOTE UNIT DISCONNECTED)')
             setStatus('disconnected')
             close()
             break
           }
         }
       },
-      () => setStatus('connected'),
-      () => setStatus('lost')
+      () => {
+        log('LINK TO COMMAND NODE ESTABLISHED')
+        setStatus('connected')
+      },
+      () => {
+        log('SIGNAL LOST (NETWORK FAILURE)')
+        setStatus('lost')
+      }
     )
   }, [])
 
   const startRandom = () => {
+    log('SCANNING FREQUENCIES...')
     setStatus('searching')
     sendWS({ type: 'find-peer' })
   }
 
   const joinRoom = () => {
     if (!roomId) return
+    log(`TUNING TO CHANNEL ${roomId}...`)
     setStatus('joining-room')
     sendWS({ type: 'join-room', roomId })
   }
@@ -116,8 +139,20 @@ export function useStateless() {
   const sendMessage = () => {
     if (!input) return
     send(input)
-    log('Me: ' + input)
+    log(input, 'tx')
     setInput('')
+  }
+
+  const terminate = () => {
+    log('CONNECTION TERMINATED BY OPERATOR')
+
+    sendWS({ type: 'leave' })
+    setStatus('idle')
+
+    // delay close so React can render log first
+    setTimeout(() => {
+      close()
+    }, 100)
   }
 
   return {
@@ -131,6 +166,7 @@ export function useStateless() {
     setRoomId,
     startRandom,
     joinRoom,
-    sendMessage
+    sendMessage,
+    terminate,
   }
 }
