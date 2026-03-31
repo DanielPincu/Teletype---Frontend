@@ -17,7 +17,11 @@ export default function App() {
     sendMessage,
     terminate,
     isSharingScreen,
-    toggleScreenShare
+    toggleScreenShare,
+    isCameraOn,
+    isAudioOn,
+    toggleCamera,
+    toggleAudio
   } = useStateless()
 
   const chatRef = React.useRef(null)
@@ -241,6 +245,70 @@ export default function App() {
                 {isSharingScreen ? 'STOP_SHARE' : 'SHARE_SCREEN'}
               </span>
             </button>
+
+          </div>
+
+          <div className="flex gap-16 mt-6">
+
+            {/* CAMERA LEVER */}
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-xs tracking-widest">CAM</span>
+              <button
+                onClick={toggleCamera}
+                className="relative w-10 h-16 flex items-center justify-center"
+              >
+                {/* base */}
+                <div className="absolute w-6 h-12 bg-black border border-green-800 rounded-sm" />
+
+                {/* lever */}
+                <div
+                  className={`
+                    absolute w-2 h-10 bg-green-400 origin-bottom transition-all duration-300
+                    ${isCameraOn ? 'rotate-0' : '-rotate-40'}
+                    shadow-[0_0_6px_rgba(0,255,0,0.6)]
+                  `}
+                />
+
+                {/* knob */}
+                <div
+                  className={`
+                    absolute bottom-1 w-4 h-4 rounded-full bg-green-300 border border-green-500
+                    transition-all duration-300
+                    ${isCameraOn ? 'translate-y-0' : 'translate-y-2'}
+                  `}
+                />
+              </button>
+            </div>
+
+            {/* MIC LEVER */}
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-xs tracking-widest">MIC</span>
+              <button
+                onClick={toggleAudio}
+                className="relative w-10 h-16 flex items-center justify-center"
+              >
+                {/* base */}
+                <div className="absolute w-6 h-12 bg-black border border-green-800 rounded-sm" />
+
+                {/* lever */}
+                <div
+                  className={`
+                    absolute w-2 h-10 bg-green-400 origin-bottom transition-all duration-300
+                    ${isAudioOn ? 'rotate-0' : '-rotate-40'}
+                    shadow-[0_0_6px_rgba(0,255,0,0.6)]
+                  `}
+                />
+
+                {/* knob */}
+                <div
+                  className={`
+                    absolute bottom-1 w-4 h-4 rounded-full bg-green-300 border border-green-500
+                    transition-all duration-300
+                    ${isAudioOn ? 'translate-y-0' : 'translate-y-2'}
+                  `}
+                />
+              </button>
+            </div>
 
           </div>
         </div>

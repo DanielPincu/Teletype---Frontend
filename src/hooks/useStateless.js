@@ -23,7 +23,25 @@ export function useStateless() {
   const [input, setInput] = useState('')
   const [roomId, setRoomId] = useState('')
   const [isSharingScreen, setIsSharingScreen] = useState(false)
+  const [isCameraOn, setIsCameraOn] = useState(() => {
+    return localStorage.getItem('cameraOn') === 'true'
+  })
+
+  const [isAudioOn, setIsAudioOn] = useState(() => {
+    return localStorage.getItem('audioOn') === 'true'
+  })
+  const cameraRefState = useRef(isCameraOn)
+  const audioRefState = useRef(isAudioOn)
   const isSearching = useRef(false)
+
+  useEffect(() => {
+    cameraRefState.current = isCameraOn
+  }, [isCameraOn])
+
+  useEffect(() => {
+    audioRefState.current = isAudioOn
+  }, [isAudioOn])
+
   const toggleScreenShare = async () => {
     try {
       if (!isSharingScreen) {
@@ -81,6 +99,47 @@ export function useStateless() {
       }
     ])
 
+  const playSwitchSound = () => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext
+      if (!AudioCtx) return
+      const ctx = new AudioCtx()
+
+      const now = ctx.currentTime
+
+      // first click (engage)
+      const osc1 = ctx.createOscillator()
+      const gain1 = ctx.createGain()
+      osc1.type = 'square'
+      osc1.frequency.setValueAtTime(900, now)
+      gain1.gain.setValueAtTime(0.0001, now)
+      gain1.gain.exponentialRampToValueAtTime(0.2, now + 0.005)
+      gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.03)
+      osc1.connect(gain1).connect(ctx.destination)
+      osc1.start(now)
+      osc1.stop(now + 0.04)
+
+      // tiny delay then second click (release) to simulate resistance
+      const t2 = now + 0.06
+      const osc2 = ctx.createOscillator()
+      const gain2 = ctx.createGain()
+      osc2.type = 'square'
+      osc2.frequency.setValueAtTime(700, t2)
+      gain2.gain.setValueAtTime(0.0001, t2)
+      gain2.gain.exponentialRampToValueAtTime(0.15, t2 + 0.005)
+      gain2.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.03)
+      osc2.connect(gain2).connect(ctx.destination)
+      osc2.start(t2)
+      osc2.stop(t2 + 0.04)
+
+      // close context shortly after
+      setTimeout(() => ctx.close(), 200)
+    // eslint-disable-next-line no-unused-vars
+    } catch (e) {
+      // ignore audio errors
+    }
+  }
+
   useEffect(() => {
 
     connectWS(
@@ -91,7 +150,7 @@ export function useStateless() {
             log('PEER FOUND → ESTABLISHING SECURE LINK...')
             setStatus('connecting')
 
-            createPeer({
+          createPeer({
               onRemote: (stream) => {
                 if (remoteRef.current) {
                   remoteRef.current.srcObject = stream
@@ -123,6 +182,10 @@ export function useStateless() {
             }, !!msg.initiator)
 
             const stream = await initMedia()
+
+            // apply initial mute states
+            stream.getVideoTracks().forEach(t => t.enabled = cameraRefState.current)
+            stream.getAudioTracks().forEach(t => t.enabled = audioRefState.current)
 
             if (localRef.current) {
               localRef.current.srcObject = stream
@@ -288,6 +351,46 @@ export function useStateless() {
     }, 600)
   }
 
+  const toggleCamera = () => {
+    const stream = localRef.current?.srcObject
+
+    playSwitchSound()
+
+    setIsCameraOn(prev => {
+      const next = !prev
+      localStorage.setItem('cameraOn', next)
+
+      if (stream) {
+        stream.getVideoTracks().forEach(track => {
+          track.enabled = next
+        })
+      }
+
+      log(next ? 'CAMERA ON' : 'CAMERA OFF')
+      return next
+    })
+  }
+
+  const toggleAudio = () => {
+    const stream = localRef.current?.srcObject
+
+    playSwitchSound()
+
+    setIsAudioOn(prev => {
+      const next = !prev
+      localStorage.setItem('audioOn', next)
+
+      if (stream) {
+        stream.getAudioTracks().forEach(track => {
+          track.enabled = next
+        })
+      }
+
+      log(next ? 'MIC ON' : 'MIC OFF')
+      return next
+    })
+  }
+
   return {
     localRef,
     remoteRef,
@@ -304,5 +407,9 @@ export function useStateless() {
     terminate,
     isSharingScreen,
     toggleScreenShare,
+    isCameraOn,
+    isAudioOn,
+    toggleCamera,
+    toggleAudio,
   }
 }
