@@ -1,157 +1,100 @@
-import { RTC_CONFIG } from './config'
-
-let peerConnection = null
-let dataChannel = null
+let pc = null
 let localStream = null
+let peerId = null
+let pendingCandidates = []
 
-async function ensureLocalMedia() {
-  if (localStream) {
-    return localStream
-  }
+const config = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' }
+  ]
+}
+
+export async function startPeer(isInitiator, target, send, onRemote) {
+  peerId = target
+
+  pc = new RTCPeerConnection(config)
 
   localStream = await navigator.mediaDevices.getUserMedia({
-    video: {
-      width: { ideal: 1280 },
-      height: { ideal: 720 },
-      frameRate: { ideal: 30, max: 60 }
-    },
-    audio: {
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true
-    }
+    video: true,
+    audio: true
   })
 
-  if (peerConnection) {
-    const senders = peerConnection.getSenders()
+  onRemote.local(localStream)
 
-    localStream.getTracks().forEach((track) => {
-      const alreadyAdded = senders.some((sender) => sender.track === track)
-      if (!alreadyAdded) {
-        peerConnection.addTrack(track, localStream)
-      }
-    })
+  localStream.getTracks().forEach(track => {
+    pc.addTrack(track, localStream)
+  })
 
-    // Increase video bitrate for better quality
-    peerConnection.getSenders().forEach((sender) => {
-      if (sender.track && sender.track.kind === 'video') {
-        const params = sender.getParameters()
-        if (!params.encodings) params.encodings = [{}]
+  pc.ontrack = (event) => {
+    let stream = onRemote.remoteEl.srcObject
 
-        params.encodings[0].maxBitrate = 2500000 // ~2.5 Mbps
-        sender.setParameters(params)
-      }
-    })
+    if (!stream) {
+      stream = new MediaStream()
+      onRemote.remoteEl.srcObject = stream
+    }
+
+    stream.addTrack(event.track)
   }
 
-  return localStream
-}
-
-export function createPeer({ onRemote, onData, onIce, onState }, initiator) {
-  peerConnection = new RTCPeerConnection(RTC_CONFIG)
-
-  // Apply bitrate settings once senders are available
-  setTimeout(() => {
-    if (!peerConnection) return
-
-    peerConnection.getSenders().forEach((sender) => {
-      if (sender.track && sender.track.kind === 'video') {
-        const params = sender.getParameters()
-        if (!params.encodings) params.encodings = [{}]
-
-        params.encodings[0].maxBitrate = 2500000
-        sender.setParameters(params)
-      }
-    })
-  }, 500)
-
-  peerConnection.onicecandidate = (e) => {
-    if (e.candidate) onIce(e.candidate)
-  }
-
-  peerConnection.ontrack = (e) => {
-    onRemote(e.streams[0])
-  }
-
-  peerConnection.onconnectionstatechange = () => {
-    onState(peerConnection.connectionState)
-  }
-
-  if (initiator) {
-    dataChannel = peerConnection.createDataChannel('chat')
-    bindDC(onData)
-  } else {
-    peerConnection.ondatachannel = (e) => {
-      dataChannel = e.channel
-      bindDC(onData)
+  pc.onicecandidate = (event) => {
+    if (event.candidate) {
+      send({
+        type: 'ice-candidate',
+        target: peerId,
+        candidate: event.candidate
+      })
     }
   }
+
+  if (isInitiator) {
+    const offer = await pc.createOffer()
+    await pc.setLocalDescription(offer)
+
+    send({
+      type: 'offer',
+      target: peerId,
+      offer
+    })
+  }
 }
 
-function bindDC(onData) {
-  if (!dataChannel) return
+export async function handleOffer(msg, send) {
+  await pc.setRemoteDescription(msg.offer)
 
-  dataChannel.onmessage = (e) => onData(e.data)
-  dataChannel.onopen = () => console.log('DC open')
-  dataChannel.onclose = () => console.log('DC closed')
+  for (const c of pendingCandidates) {
+    await pc.addIceCandidate(c)
+  }
+  pendingCandidates = []
+
+  const answer = await pc.createAnswer()
+  await pc.setLocalDescription(answer)
+
+  send({
+    type: 'answer',
+    target: msg.from,
+    answer
+  })
 }
 
-export async function initMedia() {
-  return ensureLocalMedia()
-}
+export async function handleAnswer(msg) {
+  await pc.setRemoteDescription(msg.answer)
 
-export async function createOffer() {
-  await ensureLocalMedia()
-  const offer = await peerConnection.createOffer()
-  await peerConnection.setLocalDescription(offer)
-  return peerConnection.localDescription
-}
-
-export async function handleOffer(offer) {
-  await ensureLocalMedia()
-  await peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
-  const answer = await peerConnection.createAnswer()
-  await peerConnection.setLocalDescription(answer)
-  return peerConnection.localDescription
-}
-
-export async function handleAnswer(answer) {
-  await peerConnection.setRemoteDescription(new RTCSessionDescription(answer))
+  for (const c of pendingCandidates) {
+    await pc.addIceCandidate(c)
+  }
+  pendingCandidates = []
 }
 
 export async function addIce(candidate) {
-  try {
-    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
-  } catch (err) {
-    console.error('ICE error:', err)
+  if (!pc || !pc.remoteDescription) {
+    pendingCandidates.push(candidate)
+    return
   }
+
+  await pc.addIceCandidate(candidate)
 }
 
-export function send(msg) {
-  if (dataChannel?.readyState === 'open') {
-    dataChannel.send(msg)
-  }
-}
-
-// Replace the video track for screen sharing or camera switching
-export function replaceVideoTrack(newTrack) {
-  if (!peerConnection) return
-
-  const sender = peerConnection
-    .getSenders()
-    .find((s) => s.track && s.track.kind === 'video')
-
-  if (sender) {
-    sender.replaceTrack(newTrack)
-  }
-}
-
-export function close() {
-  dataChannel?.close()
-  localStream?.getTracks().forEach((t) => t.stop())
-  peerConnection?.close()
-
-  dataChannel = null
-  localStream = null
-  peerConnection = null
+export function closePeer() {
+  pc?.close()
+  pc = null
 }
