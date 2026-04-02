@@ -296,7 +296,7 @@ function reset() {
   window.sendMessage = null
   if (chatBox) chatBox.innerHTML = ''
   if (randomBtn) {
-    randomBtn.innerText = 'Start Random Match'
+    randomBtn.innerText = 'Connect'
     randomBtn.classList.remove('bg-red-700')
     randomBtn.classList.add('bg-green-700')
   }
@@ -316,17 +316,26 @@ function reset() {
 
 function updateMediaButtons() {
   if (micBtn) {
-    micBtn.innerText = micEnabled ? 'Turn Mic OFF' : 'Turn Mic ON'
+    micBtn.innerHTML = micEnabled
+      ? `<i data-lucide="mic" class="w-4 h-4"></i><span>MIC ON</span>`
+      : `<i data-lucide="mic-off" class="w-4 h-4"></i><span>MIC OFF</span>`
 
     micBtn.classList.toggle('bg-green-700', micEnabled)
     micBtn.classList.toggle('bg-gray-700', !micEnabled)
   }
 
   if (camBtn) {
-    camBtn.innerText = camEnabled ? 'Turn Cam OFF' : 'Turn Cam ON'
+    camBtn.innerHTML = camEnabled
+      ? `<i data-lucide="video" class="w-4 h-4"></i><span>CAM ON</span>`
+      : `<i data-lucide="video-off" class="w-4 h-4"></i><span>CAM OFF</span>`
 
     camBtn.classList.toggle('bg-green-700', camEnabled)
     camBtn.classList.toggle('bg-gray-700', !camEnabled)
+  }
+
+  // re-render lucide icons
+  if (window.lucide) {
+    lucide.createIcons()
   }
 }
 
