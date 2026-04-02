@@ -5,40 +5,41 @@
   <title>Teletype Minimal</title>
 
   <!-- Tailwind CDN -->
+   <script>
+  const originalWarn = console.warn
+  console.warn = (...args) => {
+    if (args[0] && args[0].includes('cdn.tailwindcss.com')) return
+    originalWarn(...args)
+  }
+</script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-black text-green-400 font-mono p-4">
+<body class="bg-neutral-900 text-green-400 font-mono min-h-screen flex items-center justify-center">
+  <div class="w-full max-w-4xl bg-black border border-green-700 rounded-xl shadow-lg p-6">
 
-  <h1 class="text-xl mb-4">TELETYPE // MINIMAL</h1>
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-lg tracking-widest">TELETYPE</h1>
+      <span class="text-xs text-green-600">v1.0</span>
+    </div>
 
-  <div id="status" class="mb-4">Idle</div>
+    <div class="mb-4 flex items-center gap-2">
+      <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+      <span id="status" class="text-sm text-green-300">Idle</span>
+    </div>
 
-  <div class="flex gap-2 mb-4 flex-wrap">
-    <button id="random" class="bg-green-700 px-4 py-2 hover:bg-green-600">
-      Random Match
-    </button>
+    <div class="mb-6">
+      <button id="random" class="w-full bg-green-700 py-3 rounded-lg hover:bg-green-600 transition">
+        Start Random Match
+      </button>
+    </div>
 
-    <input id="roomInput" placeholder="Room ID"
-      class="bg-black border border-green-500 px-2" />
+    <div class="grid grid-cols-2 gap-4">
+      <video id="local" autoplay muted playsinline class="w-full aspect-video bg-black border border-green-700 rounded-lg"></video>
+      <video id="remote" autoplay playsinline class="w-full aspect-video bg-black border border-green-700 rounded-lg"></video>
+    </div>
 
-    <button id="join" class="bg-green-700 px-4 py-2 hover:bg-green-600">
-      Join Room
-    </button>
-
-    <button id="disconnect" class="bg-red-700 px-4 py-2 hover:bg-red-600">
-      Disconnect
-    </button>
-    <button id="shareScreen" class="bg-blue-700 px-4 py-2 hover:bg-blue-600">
-      Share Screen
-    </button>
   </div>
-
-  <div class="flex gap-4">
-    <video id="local" autoplay muted playsinline class="w-64 bg-black border border-green-500"></video>
-    <video id="remote" autoplay playsinline class="w-64 bg-black border border-green-500"></video>
-  </div>
-
   <script src="app.js"></script>
 </body>
 </html>

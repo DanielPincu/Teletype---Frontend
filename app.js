@@ -17,7 +17,6 @@ let pendingCandidates = []
 const statusEl = document.getElementById('status')
 const localVideo = document.getElementById('local')
 const remoteVideo = document.getElementById('remote')
-const screenBtn = document.getElementById('shareScreen')
 
 const config = {
   iceServers: [
@@ -180,70 +179,11 @@ function reset() {
 }
 
 
-// ---------------- SCREEN SHARE ----------------
-
-if (screenBtn) {
-  screenBtn.onclick = async () => {
-    if (!pc) {
-      console.warn('No active call')
-      return
-    }
-
-    try {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({
-        video: true
-      })
-
-      const screenTrack = screenStream.getVideoTracks()[0]
-
-      const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video')
-
-      if (sender) {
-        await sender.replaceTrack(screenTrack)
-      }
-
-      localVideo.srcObject = screenStream
-
-      screenTrack.onended = async () => {
-        const camStream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true
-        })
-
-        const camTrack = camStream.getVideoTracks()[0]
-
-        if (sender) {
-          await sender.replaceTrack(camTrack)
-        }
-
-        localVideo.srcObject = camStream
-      }
-
-    } catch (err) {
-      console.error('Screen share error:', err)
-    }
-  }
-}
-
 // ---------------- UI ----------------
 
 document.getElementById('random').onclick = () => {
   statusEl.innerText = 'Searching...'
   safeSend({ type: "find-peer" })
-}
-
-document.getElementById('join').onclick = () => {
-  const roomId = document.getElementById('roomInput').value
-
-  safeSend({
-    type: "join-room",
-    roomId
-  })
-}
-
-document.getElementById('disconnect').onclick = () => {
-  safeSend({ type: 'leave' })
-  reset()
 }
 
 // init
