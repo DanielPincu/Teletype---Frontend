@@ -272,14 +272,14 @@ function reset() {
 
 function updateMediaButtons() {
   if (micBtn) {
-    micBtn.innerText = micEnabled ? 'Mic is ON' : 'Mic is OFF'
+    micBtn.innerText = micEnabled ? 'ON' : 'OFF'
 
     micBtn.classList.toggle('bg-green-700', micEnabled)
     micBtn.classList.toggle('bg-gray-700', !micEnabled)
   }
 
   if (camBtn) {
-    camBtn.innerText = camEnabled ? 'Cam is ON' : 'Cam is OFF'
+    camBtn.innerText = camEnabled ? 'ON' : 'OFF'
 
     camBtn.classList.toggle('bg-green-700', camEnabled)
     camBtn.classList.toggle('bg-gray-700', !camEnabled)
