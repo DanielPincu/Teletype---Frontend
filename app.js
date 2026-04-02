@@ -15,6 +15,8 @@ let peerId = null
 let pendingCandidates = []
 let dataChannel = null
 let isSearching = false
+let isScreenSharing = false
+let cameraTrack = null
 
 const statusEl = document.getElementById('status')
 const localVideo = document.getElementById('local')
@@ -22,6 +24,10 @@ const remoteVideo = document.getElementById('remote')
 
 const chatInput = document.getElementById('chatInput')
 const chatBox = document.getElementById('chatBox')
+const disconnectBtn = document.getElementById('disconnect')
+const randomBtn = document.getElementById('random')
+const shareBtn = document.getElementById('share')
+if (shareBtn) shareBtn.style.display = 'none'
 
 const config = {
   iceServers: [
@@ -125,6 +131,16 @@ async function startPeer(isInitiator) {
   if (pc) return
 
   pc = new RTCPeerConnection(config)
+  pc.onconnectionstatechange = () => {
+    if (
+      pc.connectionState === 'disconnected' ||
+      pc.connectionState === 'failed' ||
+      pc.connectionState === 'closed'
+    ) {
+      console.log('Connection lost, resetting')
+      reset()
+    }
+  }
 
   if (isInitiator) {
     dataChannel = pc.createDataChannel('chat')
@@ -142,6 +158,7 @@ async function startPeer(isInitiator) {
   })
 
   localVideo.srcObject = localStream
+  cameraTrack = localStream.getVideoTracks()[0]
 
   localStream.getTracks().forEach(track => {
     pc.addTrack(track, localStream)
@@ -185,6 +202,9 @@ function setupDataChannel() {
 
   dataChannel.onopen = () => {
     console.log('Chat channel open')
+    statusEl.innerText = 'Connected'
+    if (randomBtn) randomBtn.innerText = 'Disconnect'
+    if (shareBtn) shareBtn.style.display = 'block'
   }
 
   dataChannel.onmessage = (event) => {
@@ -213,16 +233,38 @@ function reset() {
 
   statusEl.innerText = 'Idle'
   isSearching = false
+  if (chatBox) chatBox.innerHTML = ''
+  if (randomBtn) randomBtn.innerText = 'Start Random Match'
+  isScreenSharing = false
+
+  if (shareBtn) {
+    shareBtn.style.display = 'none'
+    shareBtn.innerText = 'Share Screen'
+  }
 }
 
 
 // ---------------- UI ----------------
 
-document.getElementById('random').onclick = () => {
-  if (isSearching) return
+randomBtn.onclick = () => {
+  // If connected → disconnect
+  if (pc) {
+    safeSend({ type: 'leave' })
+    reset()
+    return
+  }
 
+  // If searching → abort search
+  if (isSearching) {
+    safeSend({ type: 'leave' })
+    reset()
+    return
+  }
+
+  // Start searching
   isSearching = true
   statusEl.innerText = 'Searching...'
+  randomBtn.innerText = 'Abort'
   safeSend({ type: "find-peer" })
 }
 
@@ -239,6 +281,57 @@ if (chatInput) {
       chatInput.value = ''
     }
   })
+}
+
+if (disconnectBtn) {
+  disconnectBtn.onclick = () => {
+    safeSend({ type: 'leave' })
+    reset()
+  }
+}
+
+async function toggleScreenShare() {
+  if (!pc) return
+
+  const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video')
+  if (!sender) return
+
+  // Stop sharing
+  if (isScreenSharing) {
+    await sender.replaceTrack(cameraTrack)
+    localVideo.srcObject = localStream
+    isScreenSharing = false
+
+    if (shareBtn) shareBtn.innerText = 'Share Screen'
+    return
+  }
+
+  // Start screen share
+  try {
+    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true })
+    const screenTrack = stream.getVideoTracks()[0]
+
+    await sender.replaceTrack(screenTrack)
+    localVideo.srcObject = stream
+
+    isScreenSharing = true
+
+    if (shareBtn) shareBtn.innerText = 'Stop Sharing'
+
+    screenTrack.onended = async () => {
+      await sender.replaceTrack(cameraTrack)
+      localVideo.srcObject = localStream
+      isScreenSharing = false
+
+      if (shareBtn) shareBtn.innerText = 'Share Screen'
+    }
+  } catch (e) {
+    console.error('Screen share failed', e)
+  }
+}
+
+if (shareBtn) {
+  shareBtn.onclick = toggleScreenShare
 }
 
 // init
