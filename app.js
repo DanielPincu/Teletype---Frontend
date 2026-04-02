@@ -27,6 +27,8 @@ const chatBox = document.getElementById('chatBox')
 const disconnectBtn = document.getElementById('disconnect')
 const randomBtn = document.getElementById('random')
 const shareBtn = document.getElementById('share')
+const micBtn = document.getElementById('mic')
+const camBtn = document.getElementById('cam')
 if (shareBtn) {
   shareBtn.classList.add('hidden')
   shareBtn.disabled = true
@@ -37,6 +39,9 @@ const config = {
     { urls: "stun:stun.l.google.com:19302" }
   ]
 }
+
+let micEnabled = localStorage.getItem('micEnabled') !== 'false'
+let camEnabled = localStorage.getItem('camEnabled') !== 'false'
 
 function appendMessage(sender, text) {
   if (!chatBox) return
@@ -160,6 +165,12 @@ async function startPeer(isInitiator) {
     audio: true
   })
 
+  // Apply saved preferences (default OFF)
+  localStream.getAudioTracks().forEach(t => t.enabled = micEnabled)
+  localStream.getVideoTracks().forEach(t => t.enabled = camEnabled)
+
+  updateMediaButtons()
+
   localVideo.srcObject = localStream
   cameraTrack = localStream.getVideoTracks()[0]
 
@@ -206,7 +217,11 @@ function setupDataChannel() {
   dataChannel.onopen = () => {
     console.log('Chat channel open')
     statusEl.innerText = 'Connected'
-    if (randomBtn) randomBtn.innerText = 'Disconnect'
+    if (randomBtn) {
+      randomBtn.innerText = 'Disconnect'
+      randomBtn.classList.add('bg-red-700')
+      randomBtn.classList.remove('bg-gray-700', 'bg-green-700')
+    }
     if (shareBtn) {
       shareBtn.classList.remove('hidden')
       shareBtn.disabled = false
@@ -240,13 +255,34 @@ function reset() {
   statusEl.innerText = 'Idle'
   isSearching = false
   if (chatBox) chatBox.innerHTML = ''
-  if (randomBtn) randomBtn.innerText = 'Start Random Match'
+  if (randomBtn) {
+    randomBtn.innerText = 'Start Random Match'
+    randomBtn.classList.remove('bg-red-700')
+    randomBtn.classList.add('bg-green-700')
+  }
   isScreenSharing = false
 
   if (shareBtn) {
     shareBtn.classList.add('hidden')
     shareBtn.disabled = true
     shareBtn.innerText = 'Share Screen'
+  }
+  updateMediaButtons()
+}
+
+function updateMediaButtons() {
+  if (micBtn) {
+    micBtn.innerText = micEnabled ? 'Mic is ON' : 'Mic is OFF'
+
+    micBtn.classList.toggle('bg-green-700', micEnabled)
+    micBtn.classList.toggle('bg-gray-700', !micEnabled)
+  }
+
+  if (camBtn) {
+    camBtn.innerText = camEnabled ? 'Cam is ON' : 'Cam is OFF'
+
+    camBtn.classList.toggle('bg-green-700', camEnabled)
+    camBtn.classList.toggle('bg-gray-700', !camEnabled)
   }
 }
 
@@ -258,6 +294,8 @@ randomBtn.onclick = () => {
   if (pc) {
     safeSend({ type: 'leave' })
     reset()
+    randomBtn.classList.remove('bg-red-700')
+    randomBtn.classList.add('bg-gray-700')
     return
   }
 
@@ -265,6 +303,8 @@ randomBtn.onclick = () => {
   if (isSearching) {
     safeSend({ type: 'leave' })
     reset()
+    randomBtn.classList.remove('bg-red-700')
+    randomBtn.classList.add('bg-gray-700')
     return
   }
 
@@ -272,6 +312,8 @@ randomBtn.onclick = () => {
   isSearching = true
   statusEl.innerText = 'Searching...'
   randomBtn.innerText = 'Abort'
+  randomBtn.classList.add('bg-red-700')
+  randomBtn.classList.remove('bg-gray-700', 'bg-green-700')
   safeSend({ type: "find-peer" })
 }
 
@@ -294,6 +336,10 @@ if (disconnectBtn) {
   disconnectBtn.onclick = () => {
     safeSend({ type: 'leave' })
     reset()
+    if (randomBtn) {
+      randomBtn.classList.remove('bg-red-700')
+      randomBtn.classList.add('bg-gray-700')
+    }
   }
 }
 
@@ -340,6 +386,34 @@ async function toggleScreenShare() {
 if (shareBtn) {
   shareBtn.onclick = toggleScreenShare
 }
+
+if (micBtn) {
+  micBtn.onclick = () => {
+    micEnabled = !micEnabled
+    localStorage.setItem('micEnabled', micEnabled)
+
+    if (localStream) {
+      localStream.getAudioTracks().forEach(t => t.enabled = micEnabled)
+    }
+
+    updateMediaButtons()
+  }
+}
+
+if (camBtn) {
+  camBtn.onclick = () => {
+    camEnabled = !camEnabled
+    localStorage.setItem('camEnabled', camEnabled)
+
+    if (localStream) {
+      localStream.getVideoTracks().forEach(t => t.enabled = camEnabled)
+    }
+
+    updateMediaButtons()
+  }
+}
+
+updateMediaButtons()
 
 // init
 connectSocket()

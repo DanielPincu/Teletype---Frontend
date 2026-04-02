@@ -30,9 +30,20 @@
     </div>
 
     <div class="mb-6 space-y-2">
-      <button id="random" class="w-full bg-green-700 py-3 sm:py-3.5 rounded-lg hover:bg-green-600 active:bg-green-500 transition text-base sm:text-sm">
+      <button id="random" class="w-full bg-green-700 py-3 sm:py-3.5 rounded-lg active:bg-green-500 transition text-base sm:text-sm">
         Start Random Match
       </button>
+
+      <!-- Mic / Camera controls -->
+      <div class="grid grid-cols-2 gap-2">
+        <button id="mic" class="w-full bg-gray-700 py-2 rounded-lg transition text-sm">
+          Mic OFF
+        </button>
+
+        <button id="cam" class="w-full bg-gray-700 py-2 rounded-lg transition text-sm">
+          Cam OFF
+        </button>
+      </div>
 
       <!-- Screen share only visible on desktop -->
       <button id="share" class="hidden sm:block w-full bg-blue-700 py-2 rounded-lg hover:bg-blue-600 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed">
