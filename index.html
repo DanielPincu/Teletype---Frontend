@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Teletype Minimal</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-black text-green-400 font-mono p-4">
+
+  <h1 class="text-xl mb-4">TELETYPE // MINIMAL</h1>
+
+  <div id="status" class="mb-4">Idle</div>
+
+  <div class="flex gap-2 mb-4 flex-wrap">
+    <button id="random" class="bg-green-700 px-4 py-2 hover:bg-green-600">
+      Random Match
+    </button>
+
+    <input id="roomInput" placeholder="Room ID"
+      class="bg-black border border-green-500 px-2" />
+
+    <button id="join" class="bg-green-700 px-4 py-2 hover:bg-green-600">
+      Join Room
+    </button>
+
+    <button id="disconnect" class="bg-red-700 px-4 py-2 hover:bg-red-600">
+      Disconnect
+    </button>
+    <button id="shareScreen" class="bg-blue-700 px-4 py-2 hover:bg-blue-600">
+      Share Screen
+    </button>
+  </div>
+
+  <div class="flex gap-4">
+    <video id="local" autoplay muted playsinline class="w-64 bg-black border border-green-500"></video>
+    <video id="remote" autoplay playsinline class="w-64 bg-black border border-green-500"></video>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
