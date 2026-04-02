@@ -13,15 +13,29 @@ let pc = null
 let localStream = null
 let peerId = null
 let pendingCandidates = []
+let dataChannel = null
+let isSearching = false
 
 const statusEl = document.getElementById('status')
 const localVideo = document.getElementById('local')
 const remoteVideo = document.getElementById('remote')
 
+const chatInput = document.getElementById('chatInput')
+const chatBox = document.getElementById('chatBox')
+
 const config = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" }
   ]
+}
+
+function appendMessage(sender, text) {
+  if (!chatBox) return
+
+  const div = document.createElement('div')
+  div.innerText = `${sender}: ${text}`
+  chatBox.appendChild(div)
+  chatBox.scrollTop = chatBox.scrollHeight
 }
 
 // ---------------- WS ----------------
@@ -112,6 +126,16 @@ async function startPeer(isInitiator) {
 
   pc = new RTCPeerConnection(config)
 
+  if (isInitiator) {
+    dataChannel = pc.createDataChannel('chat')
+    setupDataChannel()
+  } else {
+    pc.ondatachannel = (event) => {
+      dataChannel = event.channel
+      setupDataChannel()
+    }
+  }
+
   localStream = await navigator.mediaDevices.getUserMedia({
     video: true,
     audio: true
@@ -156,6 +180,18 @@ async function startPeer(isInitiator) {
   }
 }
 
+function setupDataChannel() {
+  if (!dataChannel) return
+
+  dataChannel.onopen = () => {
+    console.log('Chat channel open')
+  }
+
+  dataChannel.onmessage = (event) => {
+    appendMessage('Peer', event.data)
+  }
+}
+
 function flushIce() {
   pendingCandidates.forEach(c => pc.addIceCandidate(c))
   pendingCandidates = []
@@ -176,14 +212,33 @@ function reset() {
   pendingCandidates = []
 
   statusEl.innerText = 'Idle'
+  isSearching = false
 }
 
 
 // ---------------- UI ----------------
 
 document.getElementById('random').onclick = () => {
+  if (isSearching) return
+
+  isSearching = true
   statusEl.innerText = 'Searching...'
   safeSend({ type: "find-peer" })
+}
+
+if (chatInput) {
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && dataChannel && dataChannel.readyState === 'open') {
+      e.preventDefault()
+
+      const text = chatInput.value.trim()
+      if (!text) return
+
+      appendMessage('You', text)
+      dataChannel.send(text)
+      chatInput.value = ''
+    }
+  })
 }
 
 // init
