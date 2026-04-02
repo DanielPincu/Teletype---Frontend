@@ -108,11 +108,13 @@ function connectSocket() {
     }
 
     if (msg.type === "answer") {
+      if (!pc) return
       await pc.setRemoteDescription(msg.sdp)
       flushIce()
     }
 
     if (msg.type === "ice-candidate") {
+      if (!msg.candidate) return
       if (!pc || !pc.remoteDescription) {
         pendingCandidates.push(msg.candidate)
         return
@@ -140,13 +142,16 @@ async function startPeer(isInitiator) {
 
   pc = new RTCPeerConnection(config)
   pc.onconnectionstatechange = () => {
+    if (!pc) return
+
     if (
       pc.connectionState === 'disconnected' ||
       pc.connectionState === 'failed' ||
       pc.connectionState === 'closed'
     ) {
       console.log('Connection lost, resetting')
-      reset()
+      // reload instead of partial reset
+      location.reload()
     }
   }
 
@@ -272,6 +277,8 @@ function flushIce() {
 function reset() {
   pc?.close()
   pc = null
+  dataChannel = null
+  window.dataChannel = null
 
   if (localStream) {
     localStream.getTracks().forEach(t => t.stop())
@@ -282,9 +289,11 @@ function reset() {
   remoteVideo.srcObject = null
   peerId = null
   pendingCandidates = []
+  cameraTrack = null
 
   statusEl.innerText = 'Idle'
   isSearching = false
+  window.sendMessage = null
   if (chatBox) chatBox.innerHTML = ''
   if (randomBtn) {
     randomBtn.innerText = 'Start Random Match'
@@ -299,18 +308,22 @@ function reset() {
     shareBtn.innerText = 'Share Screen'
   }
   updateMediaButtons()
+  // force full reset via page reload (simplest fix)
+  setTimeout(() => {
+    location.reload()
+  }, 100)
 }
 
 function updateMediaButtons() {
   if (micBtn) {
-    micBtn.innerText = micEnabled ? 'ON' : 'OFF'
+    micBtn.innerText = micEnabled ? 'Turn Mic OFF' : 'Turn Mic ON'
 
     micBtn.classList.toggle('bg-green-700', micEnabled)
     micBtn.classList.toggle('bg-gray-700', !micEnabled)
   }
 
   if (camBtn) {
-    camBtn.innerText = camEnabled ? 'ON' : 'OFF'
+    camBtn.innerText = camEnabled ? 'Turn Cam OFF' : 'Turn Cam ON'
 
     camBtn.classList.toggle('bg-green-700', camEnabled)
     camBtn.classList.toggle('bg-gray-700', !camEnabled)
@@ -324,6 +337,7 @@ randomBtn.onclick = () => {
   // If connected → disconnect
   if (pc) {
     safeSend({ type: 'leave' })
+    peerId = null
     reset()
     randomBtn.classList.remove('bg-red-700')
     randomBtn.classList.add('bg-gray-700')
@@ -333,10 +347,15 @@ randomBtn.onclick = () => {
   // If searching → abort search
   if (isSearching) {
     safeSend({ type: 'leave' })
+    peerId = null
     reset()
     randomBtn.classList.remove('bg-red-700')
     randomBtn.classList.add('bg-gray-700')
     return
+  }
+
+  if (pc || dataChannel) {
+    reset()
   }
 
   // Start searching
@@ -352,6 +371,7 @@ randomBtn.onclick = () => {
 if (disconnectBtn) {
   disconnectBtn.onclick = () => {
     safeSend({ type: 'leave' })
+    peerId = null
     reset()
     if (randomBtn) {
       randomBtn.classList.remove('bg-red-700')
