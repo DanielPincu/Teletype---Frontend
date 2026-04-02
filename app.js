@@ -27,7 +27,10 @@ const chatBox = document.getElementById('chatBox')
 const disconnectBtn = document.getElementById('disconnect')
 const randomBtn = document.getElementById('random')
 const shareBtn = document.getElementById('share')
-if (shareBtn) shareBtn.style.display = 'none'
+if (shareBtn) {
+  shareBtn.classList.add('hidden')
+  shareBtn.disabled = true
+}
 
 const config = {
   iceServers: [
@@ -204,7 +207,10 @@ function setupDataChannel() {
     console.log('Chat channel open')
     statusEl.innerText = 'Connected'
     if (randomBtn) randomBtn.innerText = 'Disconnect'
-    if (shareBtn) shareBtn.style.display = 'block'
+    if (shareBtn) {
+      shareBtn.classList.remove('hidden')
+      shareBtn.disabled = false
+    }
   }
 
   dataChannel.onmessage = (event) => {
@@ -238,7 +244,8 @@ function reset() {
   isScreenSharing = false
 
   if (shareBtn) {
-    shareBtn.style.display = 'none'
+    shareBtn.classList.add('hidden')
+    shareBtn.disabled = true
     shareBtn.innerText = 'Share Screen'
   }
 }
