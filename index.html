@@ -87,7 +87,7 @@
                   <p class="text-xs mt-2">CHECK CAMERA INPUT</p>
                 </div>
               </div>
-              <div class="absolute bottom-2 left-2 text-xs bg-black/70 px-2 py-1 border border-amber-800 z-[6]">CH A</div>
+              <div class="absolute bottom-2 left-2 text-xs bg-black/70 px-2 py-1 border border-amber-800 z-6">CH A</div>
             </div>
           </div>
 
@@ -110,7 +110,7 @@
                   <p class="text-xs mt-2" id="scanning-text">14.230 MHz</p>
                 </div>
               </div>
-              <div class="absolute bottom-2 left-2 text-xs bg-black/70 px-2 py-1 border border-amber-800 z-[6]">CH B</div>
+              <div class="absolute bottom-2 left-2 text-xs bg-black/70 px-2 py-1 border border-amber-800 z-6">CH B</div>
             </div>
           </div>
         </div>
@@ -365,14 +365,15 @@
     }
 
     // -------- RTTY SOUND --------
-    let rttyCtx = null
+let rttyCtx = null
+    window.playRTTY = playRTTY
 
-    function playRTTY(text) {
+    function playRTTY(text, type = 'tx') {
       if (!rttyCtx) {
         rttyCtx = new (window.AudioContext || window.webkitAudioContext)()
       }
 
-      const baseFreq = 1000
+      const baseFreq = type === 'tx' ? 1000 : 900
       const shift = 170
       const duration = 0.04
 
@@ -390,7 +391,8 @@
           osc.type = 'square'
           osc.frequency.value = bit ? baseFreq + shift : baseFreq
 
-          gain.gain.value = 0.05
+          // TX louder, RX softer
+          gain.gain.value = type === 'tx' ? 0.05 : 0.02
 
           osc.connect(gain)
           gain.connect(rttyCtx.destination)
@@ -551,20 +553,12 @@
           chatBoxEl.scrollTop = chatBoxEl.scrollHeight
 
           // play RTTY sound (SEND)
-          playRTTY(message)
+          playRTTY(message, 'tx')
 
-          // simulate receive echo after short delay
-          setTimeout(() => {
-            const reply = document.createElement('div')
-            reply.className = 'terminal-line'
-            reply.textContent = '< ' + message
-            chatBoxEl.appendChild(reply)
-
-            chatBoxEl.scrollTop = chatBoxEl.scrollHeight
-
-            // play RTTY sound (RECEIVE)
-            playRTTY(message)
-          }, 400)
+          // send via existing dataChannel logic in app.js
+          if (window.dataChannel && window.dataChannel.readyState === 'open') {
+            window.dataChannel.send(message)
+          }
 
           chatInputEl.value = ''
         }

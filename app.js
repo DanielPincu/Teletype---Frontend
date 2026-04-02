@@ -162,11 +162,21 @@ async function startPeer(isInitiator) {
 
   localStream = await navigator.mediaDevices.getUserMedia({
     video: true,
-    audio: true
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true
+    }
   })
 
   // Apply saved preferences (default OFF)
   localStream.getAudioTracks().forEach(t => t.enabled = micEnabled)
+
+  // force-enable audio track if browser started it disabled
+  localStream.getAudioTracks().forEach(t => {
+    if (t.enabled === false) t.enabled = true
+  })
+
   localStream.getVideoTracks().forEach(t => t.enabled = camEnabled)
 
   updateMediaButtons()
@@ -187,6 +197,12 @@ async function startPeer(isInitiator) {
     }
 
     stream.addTrack(event.track)
+
+    // ensure audio actually plays (browser autoplay fix)
+    remoteVideo.muted = false
+    remoteVideo.play().catch(() => {
+      console.warn('Autoplay blocked, user interaction required')
+    })
   }
 
   pc.onicecandidate = (event) => {
@@ -226,10 +242,25 @@ function setupDataChannel() {
       shareBtn.classList.remove('hidden')
       shareBtn.disabled = false
     }
+    // expose channel globally for index.html
+    window.dataChannel = dataChannel
   }
 
   dataChannel.onmessage = (event) => {
-    appendMessage('Peer', event.data)
+    const text = event.data
+
+    const chatBoxEl = document.getElementById('chatBox')
+    if (chatBoxEl) {
+      const line = document.createElement('div')
+      line.className = 'terminal-line'
+      line.textContent = '< ' + text
+      chatBoxEl.appendChild(line)
+      chatBoxEl.scrollTop = chatBoxEl.scrollHeight
+    }
+
+    if (window.playRTTY) {
+      window.playRTTY(text, 'rx')
+    }
   }
 }
 
@@ -317,20 +348,6 @@ randomBtn.onclick = () => {
   safeSend({ type: "find-peer" })
 }
 
-if (chatInput) {
-  chatInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && dataChannel && dataChannel.readyState === 'open') {
-      e.preventDefault()
-
-      const text = chatInput.value.trim()
-      if (!text) return
-
-      appendMessage('You', text)
-      dataChannel.send(text)
-      chatInput.value = ''
-    }
-  })
-}
 
 if (disconnectBtn) {
   disconnectBtn.onclick = () => {
