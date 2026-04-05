@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,7 +19,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="style.css">
 
-  
+
 </head>
 
 <body class="min-h-screen">
@@ -29,12 +30,6 @@
     </header>
 
     <div class="chassis p-4 md:p-8">
-      <div class="flex justify-between items-center mb-6 bg-black/40 p-4 rounded-xl border border-amber-800/70 gap-3">
-        <div class="text-amber-600 text-sm">FREQUENCY</div>
-        <div class="frequency-display text-amber-400 text-center" id="freq-display">14.230.00 MHz</div>
-        <span>SSTV/RTTY</span>
-       
-      </div>
 
       <div class="mb-4 flex items-center gap-4 flex-wrap w-full">
         <div class="flex items-center gap-2">
@@ -54,7 +49,8 @@
             <div id="ptt-led" class="led signal active w-2 h-5"></div>
             <span class="text-sm">GPS</span>
           </div>
-          <button id="random" class="btn-retro w-32 px-4 py-2 rounded font-bold text-sm flex items-center justify-center gap-2">
+          <button id="random"
+            class="btn-retro w-32 px-4 py-2 rounded font-bold text-sm flex items-center justify-center gap-2">
             <span id="randomText">Connect</span>
           </button>
         </div>
@@ -64,14 +60,8 @@
         <div class="grid md:grid-cols-2 gap-6 items-center">
           <div class="text-center">
             <label class="text-xs text-amber-600 block mb-2">AF GAIN</label>
-            <input
-              type="range"
-              id="volume-control"
-              min="0"
-              max="100"
-              value="50"
-              class="w-full h-2 bg-amber-950 rounded-lg appearance-none cursor-pointer accent-amber-500"
-            >
+            <input type="range" id="volume-control" min="0" max="100" value="50"
+              class="w-full h-2 bg-amber-950 rounded-lg appearance-none cursor-pointer accent-amber-500">
             <div class="meter mt-2">
               <div class="meter-fill" id="volume-meter" style="width: 50%"></div>
             </div>
@@ -121,7 +111,8 @@
             <div class="flex flex-col mb-2 gap-2">
               <span class="text-sm glow-text">LOCAL OSCILLOSCOPE [YOU]</span>
               <div class="grid grid-cols-3 gap-2 w-full">
-                <button id="share" class="btn-retro w-full px-2 py-2 text-xs rounded hidden sm:inline-flex disabled:opacity-50 disabled:cursor-not-allowed">
+                <button id="share"
+                  class="btn-retro w-full px-2 py-2 text-xs rounded hidden sm:inline-flex disabled:opacity-50 disabled:cursor-not-allowed">
                   <i data-lucide="monitor" class="w-4 h-4"></i>
                   <span>SHARE</span>
                 </button>
@@ -165,7 +156,6 @@
                 <div id="remote-placeholder" class="placeholder-panel">
                   <i data-lucide="radio" class="w-16 h-16 mx-auto mb-2"></i>
                   <p>SCANNING BANDS...</p>
-                  <p class="text-xs mt-2" id="scanning-text">14.230 MHz</p>
                 </div>
               </div>
               <div class="absolute bottom-2 left-2 text-xs bg-black/70 px-2 py-1 border border-amber-800 z-6">CH B</div>
@@ -178,10 +168,11 @@
           <div class="flex justify-between items-center mb-2 border-b border-amber-900 pb-2 gap-3 flex-wrap">
             <span class="text-amber-600 text-sm">RTTY DECODER In/Out</span>
             <div class="flex gap-2 items-center flex-wrap">
-              <button id="clear-terminal" class="text-xs text-amber-500 hover:text-amber-300 border border-amber-800 px-2 py-1 bg-transparent">
+              <button id="clear-terminal"
+                class="text-xs text-amber-500 hover:text-amber-300 border border-amber-800 px-2 py-1 bg-transparent">
                 CLEAR
               </button>
-             
+
             </div>
           </div>
 
@@ -194,388 +185,19 @@
             <div class="terminal-line">&gt; AWAITING CQ CALL...</div>
           </div>
 
-        <div class="mt-2 flex gap-2 items-start border border-amber-900/50 rounded-lg px-3 py-2 bg-amber-950/10">
-          <span class="text-amber-500">&gt;</span>
-          <textarea
-  id="chatInput"
-  placeholder="ENTER TEXT TO TRANSMIT..."
-  rows="2"
-  autocomplete="off"
-  maxlength="500"
-  class="w-full resize-none border-none bg-transparent text-amber-300 max-h-20 h-12 overflow-y-auto"
-></textarea>
-        </div>
+          <div class="mt-2 flex gap-2 items-start border border-amber-900/50 rounded-lg px-3 py-2 bg-amber-950/10">
+            <span class="text-amber-500">&gt;</span>
+            <textarea id="chatInput" placeholder="ENTER TEXT TO TRANSMIT..." rows="2" autocomplete="off" maxlength="500"
+              class="w-full resize-none border-none bg-transparent text-amber-300 max-h-20 h-12 overflow-y-auto"></textarea>
+          </div>
         </div>
       </div>
 
 
     </div>
   </div>
-
-  <script>
-    const localVideoEl = document.getElementById('local')
-    const remoteVideoEl = document.getElementById('remote')
-    const localPlaceholderEl = document.getElementById('local-placeholder')
-    const remotePlaceholderEl = document.getElementById('remote-placeholder')
-    const localStaticEl = document.getElementById('local-static')
-    const remoteStaticEl = document.getElementById('remote-static')
-    const volumeControlEl = document.getElementById('volume-control')
-    const volumeMeterEl = document.getElementById('volume-meter')
-    const clearTerminalEl = document.getElementById('clear-terminal')
-
-    function syncVideoState(videoEl, placeholderEl, staticEl, showStaticWhenEmpty) {
-      if (!videoEl || !placeholderEl) return
-      const hasSignal = Boolean(videoEl.srcObject) || Boolean(videoEl.currentSrc)
-      const ready = videoEl.readyState >= 2
-      const visible = hasSignal && ready
-
-      videoEl.classList.toggle('hidden-video', !visible)
-      placeholderEl.classList.toggle('hidden', visible)
-
-      if (staticEl) {
-        staticEl.classList.toggle('active', !visible && showStaticWhenEmpty)
-      }
-    }
-
-    function refreshVideoPanels() {
-      syncVideoState(localVideoEl, localPlaceholderEl, localStaticEl, false)
-      syncVideoState(remoteVideoEl, remotePlaceholderEl, remoteStaticEl, true)
-    }
-
-    if (localVideoEl) {
-      ;['play', 'playing', 'loadedmetadata', 'canplay', 'pause', 'emptied'].forEach(eventName => {
-        localVideoEl.addEventListener(eventName, refreshVideoPanels)
-      })
-    }
-
-    if (remoteVideoEl) {
-      ;['play', 'playing', 'loadedmetadata', 'canplay', 'pause', 'emptied'].forEach(eventName => {
-        remoteVideoEl.addEventListener(eventName, refreshVideoPanels)
-      })
-    }
-
-    // Force play remote video when stream arrives (fix for WebRTC autoplay issues)
-    if (remoteVideoEl) {
-      remoteVideoEl.onloadedmetadata = () => {
-        remoteVideoEl.play().catch(() => {})
-      }
-    }
-
-    if (volumeControlEl && volumeMeterEl) {
-      const syncVolumeMeter = () => {
-        volumeMeterEl.style.width = `${volumeControlEl.value}%`
-        if (remoteVideoEl) {
-          remoteVideoEl.volume = Number(volumeControlEl.value) / 100
-        }
-      }
-
-      volumeControlEl.addEventListener('input', syncVolumeMeter)
-      syncVolumeMeter()
-    }
-
-    if (clearTerminalEl) {
-      clearTerminalEl.addEventListener('click', () => {
-        const box = document.getElementById('chatBox')
-        if (!box) return
-        box.innerHTML = '<div class="terminal-line">TERMINAL CLEARED.</div>'
-      })
-    }
-
-    const freqDisplayEl = document.getElementById('freq-display')
-    const scanningTextEl = document.getElementById('scanning-text')
-
-    // Format frequency to XX.XXX.XX MHz (pad MHz part to 2 digits)
-    function formatFreq(f) {
-      // Normalize to XX.XXX.XX MHz (pad MHz part to 2 digits)
-      let [main, unit] = f.split(' ')
-      let parts = main.split('.')
-
-      // pad MHz (first part) to 2 digits
-      parts[0] = parts[0].padStart(2, '0')
-
-      // ensure 3 parts total
-      while (parts.length < 3) parts.push('00')
-
-      // pad decimals
-      parts[1] = parts[1].padStart(3, '0')
-      parts[2] = parts[2].padStart(2, '0')
-
-      return `${parts[0]}.${parts[1]}.${parts[2]} MHz`
-    }
-
-    // Expanded HF bands (approximate common segments)
-    const frequencies = [
-      '1.830.00 MHz','1.840.00 MHz','3.550.00 MHz','3.580.00 MHz','3.700.00 MHz','3.777.00 MHz',
-      '7.020.00 MHz','7.040.00 MHz','7.074.00 MHz','7.100.00 MHz','7.200.00 MHz','7.250.00 MHz',
-      '10.120.00 MHz','10.136.00 MHz',
-      '14.070.00 MHz','14.074.00 MHz','14.200.00 MHz','14.230.00 MHz','14.300.00 MHz',
-      '18.100.00 MHz','18.130.00 MHz',
-      '21.070.00 MHz','21.200.00 MHz','21.300.00 MHz',
-      '24.900.00 MHz',
-      '28.070.00 MHz','28.300.00 MHz','28.500.00 MHz'
-    ]
-
-    let scanningInterval = null
-    let lockedFrequency = null
-
-    // ---------------- RADIO HISS (SEARCHING NOISE) ----------------
-    let noiseCtx = null
-    let noiseGain = null
-    let noiseSource = null
-
-    function startNoise() {
-      if (noiseCtx) return
-
-      noiseCtx = new (window.AudioContext || window.webkitAudioContext)()
-      noiseGain = noiseCtx.createGain()
-      noiseGain.gain.value = 0 // start silent
-
-      const bufferSize = 2 * noiseCtx.sampleRate
-      const noiseBuffer = noiseCtx.createBuffer(1, bufferSize, noiseCtx.sampleRate)
-      const output = noiseBuffer.getChannelData(0)
-
-      for (let i = 0; i < bufferSize; i++) {
-        output[i] = Math.random() * 2 - 1 // white noise
-      }
-
-      noiseSource = noiseCtx.createBufferSource()
-      noiseSource.buffer = noiseBuffer
-      noiseSource.loop = true
-
-      noiseSource.connect(noiseGain)
-      noiseGain.connect(noiseCtx.destination)
-
-      noiseSource.start()
-    }
-
-    function updateNoiseState() {
-      if (!noiseGain) return
-
-      // softer, more discreet hiss
-      noiseGain.gain.value = 0.01
-    }
-
-    // -------- RTTY SOUND --------
-let rttyCtx = null
-    window.playRTTY = playRTTY
-
-    function playRTTY(text, type = 'tx') {
-      if (!rttyCtx) {
-        rttyCtx = new (window.AudioContext || window.webkitAudioContext)()
-      }
-
-      const baseFreq = type === 'tx' ? 1000 : 900
-      const shift = 170
-      const duration = 0.04
-
-      let time = rttyCtx.currentTime
-
-      for (const char of text) {
-        const code = char.charCodeAt(0)
-
-        for (let b = 0; b < 7; b++) {
-          const bit = (code >> b) & 1
-
-          const osc = rttyCtx.createOscillator()
-          const gain = rttyCtx.createGain()
-
-          osc.type = 'square'
-          osc.frequency.value = bit ? baseFreq + shift : baseFreq
-
-          // TX louder, RX softer
-          gain.gain.value = type === 'tx' ? 0.05 : 0.02
-
-          osc.connect(gain)
-          gain.connect(rttyCtx.destination)
-
-          osc.start(time)
-          osc.stop(time + duration)
-
-          time += duration
-        }
-      }
-    }
-
-    function startScanning() {
-      if (scanningInterval) return
-
-      scanningInterval = setInterval(() => {
-        // If connected, lock on a random frequency once
-        if (remoteVideoEl && remoteVideoEl.srcObject) {
-          if (!lockedFrequency) {
-            lockedFrequency = frequencies[Math.floor(Math.random() * frequencies.length)]
-            const formatted = formatFreq(lockedFrequency)
-            if (freqDisplayEl) freqDisplayEl.textContent = formatted
-            if (scanningTextEl) scanningTextEl.textContent = formatted
-          }
-          updateNoiseState()
-          return
-        }
-
-        // Fast drifting random scan
-        const randomFreq = frequencies[Math.floor(Math.random() * frequencies.length)]
-        const formatted = formatFreq(randomFreq)
-        if (freqDisplayEl) freqDisplayEl.textContent = formatted
-        if (scanningTextEl) scanningTextEl.textContent = formatted
-
-        updateNoiseState()
-      }, 250) // fast scan
-    }
-
-    startScanning()
-
-    // Reset lock when disconnected
-    if (remoteVideoEl) {
-      remoteVideoEl.addEventListener('emptied', () => {
-        lockedFrequency = null
-      })
-    }
-
-    refreshVideoPanels()
-
-    if (window.lucide && typeof window.lucide.createIcons === 'function') {
-      window.lucide.createIcons()
-    }
-    // ---------------- MIC → S-METER ----------------
-    let audioCtx = null
-    let analyser = null
-    let micSource = null
-
-    async function initMicMeter() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-        analyser = audioCtx.createAnalyser()
-        analyser.fftSize = 256
-
-        micSource = audioCtx.createMediaStreamSource(stream)
-        micSource.connect(analyser)
-
-        const dataArray = new Uint8Array(analyser.frequencyBinCount)
-
-        const leds = document.querySelectorAll('.s-led')
-        const meter = document.getElementById('signal-meter')
-
-        function updateMeter() {
-          analyser.getByteFrequencyData(dataArray)
-
-          let sum = 0
-          for (let i = 0; i < dataArray.length; i++) sum += dataArray[i]
-          const avg = sum / dataArray.length
-
-          // Disable meter if not connected (no remote stream)
-          let level = 0
-          if (remoteVideoEl && remoteVideoEl.srcObject) {
-            level = Math.min(100, (avg / 255) * 260)
-          }
-
-          // If not connected, clear LEDs and meter
-          if (!remoteVideoEl || !remoteVideoEl.srcObject) {
-            if (meter) meter.style.width = '0%'
-            leds.forEach(led => {
-              led.style.background = 'transparent'
-              led.style.boxShadow = ''
-            })
-            requestAnimationFrame(updateMeter)
-            return
-          }
-
-          if (meter) meter.style.width = level + '%'
-
-          // LED logic
-          leds.forEach((led, i) => {
-            const threshold = (i + 1) * (100 / leds.length)
-
-            if (level > threshold) {
-              // yellow → green → red progression
-              if (i < leds.length * 0.33) {
-                led.style.background = 'yellow'
-              } else if (i < leds.length * 0.66) {
-                led.style.background = 'green'
-              } else {
-                led.style.background = 'red'
-              }
-
-              led.style.boxShadow = '0 0 8px rgba(255,255,255,0.4)'
-            } else {
-              led.style.background = 'transparent'
-              led.style.boxShadow = ''
-            }
-          })
-
-          requestAnimationFrame(updateMeter)
-        }
-
-        updateMeter()
-      } catch (err) {
-        console.warn('Mic meter failed:', err)
-      }
-    }
-
-    // start mic meter when user interacts (browser policy)
-    document.addEventListener('click', () => {
-      if (!audioCtx) initMicMeter()
-    }, { once: true })
-
-    // start noise on first user interaction (browser policy)
-    document.addEventListener('click', () => {
-      if (!noiseCtx) startNoise()
-    }, { once: true })
-
-    // -------- CHAT INPUT RTTY HOOK --------
-    const chatInputEl = document.getElementById('chatInput')
-    const chatBoxEl = document.getElementById('chatBox')
-
-    if (chatInputEl && chatBoxEl) {
-      chatInputEl.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault()
-
-          const message = chatInputEl.value.trim()
-          if (!message) return
-
-          // display message
-          const line = document.createElement('div')
-          line.className = 'terminal-line'
-          line.textContent = '> ' + message
-          chatBoxEl.appendChild(line)
-
-          chatBoxEl.scrollTop = chatBoxEl.scrollHeight
-
-          // play RTTY sound (SEND)
-          playRTTY(message, 'tx')
-
-          // send via existing dataChannel logic in app.js
-          if (window.dataChannel && window.dataChannel.readyState === 'open') {
-            window.dataChannel.send(message)
-          }
-
-          chatInputEl.value = ''
-        }
-      })
-    }
-  </script>
-  <script>
-    const fullscreenBtn = document.getElementById('fullscreenRemote')
-
-    if (fullscreenBtn && remoteVideoEl) {
-      fullscreenBtn.addEventListener('click', () => {
-        if (!remoteVideoEl.srcObject) return
-
-        // ensure video is visible before fullscreen
-        remoteVideoEl.classList.remove('hidden-video')
-
-        if (remoteVideoEl.requestFullscreen) {
-          remoteVideoEl.requestFullscreen()
-        } else if (remoteVideoEl.webkitRequestFullscreen) {
-          remoteVideoEl.webkitRequestFullscreen()
-        } else if (remoteVideoEl.msRequestFullscreen) {
-          remoteVideoEl.msRequestFullscreen()
-        }
-      })
-    }
-  </script>
+  <script src="s-meter.js"></script>
   <script src="app.js"></script>
 </body>
+
 </html>

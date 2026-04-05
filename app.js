@@ -187,6 +187,9 @@ async function startPeer(isInitiator) {
   updateMediaButtons()
 
   localVideo.srcObject = localStream
+  localVideo.classList.remove('hidden-video')
+  const localPlaceholder = document.getElementById('local-placeholder')
+  if (localPlaceholder) localPlaceholder.classList.add('hidden')
   cameraTrack = localStream.getVideoTracks()[0]
 
   localStream.getTracks().forEach(track => {
@@ -199,6 +202,11 @@ async function startPeer(isInitiator) {
     if (!stream) {
       stream = new MediaStream()
       remoteVideo.srcObject = stream
+      remoteVideo.classList.remove('hidden-video')
+      const remotePlaceholder = document.getElementById('remote-placeholder')
+      if (remotePlaceholder) remotePlaceholder.classList.add('hidden')
+      const remoteStatic = document.getElementById('remote-static')
+      if (remoteStatic) remoteStatic.classList.remove('active')
     }
 
     stream.addTrack(event.track)
