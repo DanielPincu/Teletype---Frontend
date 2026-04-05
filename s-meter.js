@@ -1,6 +1,6 @@
 // -------- S-METER ONLY --------
 
-const meter = document.getElementById('s-meter-bar')
+const meter = document.getElementById('signal-meter')
 const leds = document.querySelectorAll('.s-led')
 
 function isMicEnabled() {
@@ -40,11 +40,23 @@ function initMicMeter() {
 
       if (meter) meter.style.width = level + '%'
 
+      const rowSize = leds.length / 2
+
       leds.forEach((led, i) => {
-        const threshold = (i + 1) * (100 / leds.length)
+        const localIndex = i % rowSize
+        const threshold = (localIndex + 1) * (100 / rowSize)
+
+        // decide color zone
+        let color = '#00ff00' // default green
+        if (localIndex < 4) {
+          color = '#ffff00' // yellow (low)
+        } else if (localIndex >= rowSize - 6) {
+          color = '#ff0000' // red (high)
+        }
+
         if (level > threshold) {
-          led.style.background = '#00ff00'
-          led.style.boxShadow = '0 0 6px #00ff00'
+          led.style.background = color
+          led.style.boxShadow = `0 0 6px ${color}`
         } else {
           led.style.background = 'transparent'
           led.style.boxShadow = ''
