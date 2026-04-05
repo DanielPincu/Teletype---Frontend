@@ -72,9 +72,12 @@ rtcHandlers.onDisconnected = () => {
     shareBtn.disabled = true
     shareBtn.classList.add('opacity-50', 'cursor-not-allowed')
     const shareText = document.getElementById('shareText')
-    const shareIcon = shareBtn.querySelector('i')
-    shareText.innerText = 'SHARE'
-    shareIcon.setAttribute('data-lucide', 'screen-share')
+    if (shareText) shareText.innerText = 'SHARE'
+
+    // safely replace icon (handles svg already rendered by lucide)
+    shareBtn.querySelector('svg')?.remove()
+    shareBtn.insertAdjacentHTML('afterbegin', '<i data-lucide="screen-share" class="w-4 h-4"></i>')
+
     if (window.lucide) window.lucide.createIcons()
     isSharing = false
   }
@@ -165,9 +168,12 @@ if (shareBtn) {
       if (!ok) return
 
       const shareText = document.getElementById('shareText')
-      const shareIcon = shareBtn.querySelector('i')
-      shareText.innerText = 'SHARE'
-      shareIcon.setAttribute('data-lucide', 'screen-share')
+      if (shareText) shareText.innerText = 'SHARE'
+
+      // safely replace icon (handles svg already rendered by lucide)
+      shareBtn.querySelector('svg')?.remove()
+      shareBtn.insertAdjacentHTML('afterbegin', '<i data-lucide="screen-share" class="w-4 h-4"></i>')
+
       if (window.lucide) window.lucide.createIcons()
 
       shareBtn.classList.remove('bg-green-700')
@@ -181,9 +187,11 @@ if (shareBtn) {
     if (!ok) return
 
     const shareText = document.getElementById('shareText')
-    const shareIcon = shareBtn.querySelector('i')
-    shareText.innerText = 'STOP'
-    shareIcon.setAttribute('data-lucide', 'square')
+    if (shareText) shareText.innerText = 'STOP'
+
+    shareBtn.querySelector('svg')?.remove()
+    shareBtn.insertAdjacentHTML('afterbegin', '<i data-lucide="square" class="w-4 h-4"></i>')
+
     if (window.lucide) window.lucide.createIcons()
 
     shareBtn.classList.add('bg-green-700')

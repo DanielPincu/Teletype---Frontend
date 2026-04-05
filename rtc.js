@@ -117,6 +117,12 @@ export async function handleSignal(msg) {
     await startPeer(false, msg.from)
     await pc.setRemoteDescription(msg.sdp)
 
+    // flush queued ICE candidates
+    for (const c of pendingCandidates) {
+      try { await pc.addIceCandidate(c) } catch {}
+    }
+    pendingCandidates = []
+
     const answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
 
@@ -125,11 +131,21 @@ export async function handleSignal(msg) {
 
   if (msg.type === "answer") {
     await pc.setRemoteDescription(msg.sdp)
+
+    // flush queued ICE candidates
+    for (const c of pendingCandidates) {
+      try { await pc.addIceCandidate(c) } catch {}
+    }
+    pendingCandidates = []
   }
 
   if (msg.type === "ice-candidate") {
     if (pc && msg.candidate) {
-      await pc.addIceCandidate(msg.candidate)
+      if (pc.remoteDescription) {
+        try { await pc.addIceCandidate(msg.candidate) } catch {}
+      } else {
+        pendingCandidates.push(msg.candidate)
+      }
     }
   }
 }
