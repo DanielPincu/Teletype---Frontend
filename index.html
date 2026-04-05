@@ -54,94 +54,100 @@
 
       <div class="bg-black/30 border border-amber-800/70 p-4 rounded-xl mb-4">
         <div class="grid md:grid-cols-2 gap-6 items-center">
-          <div class="text-center md:col-start-2">
-            
-            <div class="flex items-center justify-end gap-4 mb-4 flex-wrap w-full">
-
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-red-400">RELAY</span>
-                <div id="modeSwitch"
-                  class="relative w-14 h-7 bg-gray-800 border border-amber-700 rounded-full cursor-pointer transition">
-                  <div id="modeKnob"
-                    class="absolute top-1 left-1 w-5 h-5 bg-amber-500 rounded-full shadow transition">
-                  </div>
-                </div>
-
-                <span class="text-xs text-green-400">DIRECT</span>
-              </div>
-
-              <button id="random"
-                class="btn-retro w-32 px-4 py-2 rounded font-bold text-sm flex items-center justify-center gap-2">
-                <span id="randomText">Connect</span>
-              </button>
-
-            </div>
-            <label class="text-xs text-amber-600 block mb-2">S-METER</label>
-            <div class="flex flex-col gap-1 mb-1">
-              <!-- TOP ROW -->
-              <div class="flex w-full gap-1">
-                <!-- 24 LEDs that stretch evenly -->
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-
-                <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
-
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-              </div>
-
-              <!-- BOTTOM ROW -->
-              <div class="flex w-full gap-1">
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
-
-                <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
-
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-                <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
-              </div>
-            </div>
-            <div class="meter">
-              <div class="meter-fill" id="signal-meter" style="width: 0%"></div>
+          <div class="flex items-start md:col-start-1">
+            <div id="dial"
+              class="flex justify-start items-center gap-4 bg-black/40 px-6 py-3 border border-green-900 rounded-md shadow-[0_0_10px_rgba(0,255,0,0.2)] mb-4">
             </div>
           </div>
-        </div>
+
+          <div class="flex items-start justify-end md:col-start-2">
+            <div class="flex flex-col items-end gap-4 w-full">
+              <div class="flex items-center justify-end gap-4 flex-wrap w-full">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-red-400">RELAY</span>
+                  <div id="modeSwitch"
+                    class="relative w-14 h-7 bg-gray-800 border border-amber-700 rounded-full cursor-pointer transition">
+                    <div id="modeKnob"
+                      class="absolute top-1 left-1 w-5 h-5 bg-amber-500 rounded-full shadow transition">
+                    </div>
+                  </div>
+                  <span class="text-xs text-green-400">DIRECT</span>
+                </div>
+                <button id="random"
+                  class="btn-retro w-32 px-4 py-2 rounded font-bold text-sm flex items-center justify-center gap-2">
+                  <span id="randomText">Connect</span>
+                </button>
+              </div>
+
+              <!-- S-METER RIGHT SIDE -->
+              <div class="w-full">
+                <label class="text-xs text-amber-600 block mb-2 text-right">S-METER</label>
+                <div class="flex flex-col gap-1 mb-1">
+                  <!-- keep existing LED rows exactly as they are -->
+                  <!-- TOP ROW -->
+                  <div class="flex w-full gap-1">
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+
+                    <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
+
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+                  </div>
+
+                  <!-- BOTTOM ROW -->
+                  <div class="flex w-full gap-1">
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-green-950"></div>
+
+                    <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-red-950"></div>
+
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+                    <div class="s-led h-2 flex-1 rounded-full border border-yellow-950"></div>
+                  </div>
+                </div>
+                <div class="meter">
+                  <div class="meter-fill" id="signal-meter" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
       </div>
 
       <div class="grid md:grid-cols-3 gap-6 mb-6 items-stretch">
