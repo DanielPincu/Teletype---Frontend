@@ -1,5 +1,5 @@
 import { connectSocket, safeSend } from './network.js'
-import { rtcHandlers, handleSignal, resetPeer } from './rtc.js'
+import { rtcHandlers, handleSignal, resetPeer, setConnectionMode, getConnectionMode } from './rtc.js'
 import { toggleMic, toggleCam, toggleScreenShare } from './rtc.js'
 
 const localVideo = document.getElementById('local')
@@ -12,6 +12,7 @@ const micBtn = document.getElementById('mic')
 const camBtn = document.getElementById('cam')
 const shareBtn = document.getElementById('share')
 const fullscreenBtn = document.getElementById('fullscreenRemote')
+const modeBtn = document.getElementById('mode')
 
 // Initially disable share button
 if (shareBtn) {
@@ -278,4 +279,29 @@ randomBtn.onclick = () => {
   randomBtn.classList.add('bg-red-700')
 
   isSearching = true
+}
+// ---- MODE BUTTON ----
+if (modeBtn) {
+  function updateModeUI() {
+    const mode = getConnectionMode()
+    modeBtn.innerText = mode === 'relay' ? 'RELAY' : 'P2P'
+    modeBtn.classList.toggle('bg-green-700', mode === 'relay')
+  }
+
+  updateModeUI()
+
+  modeBtn.onclick = () => {
+    const current = getConnectionMode()
+    const next = current === 'p2p' ? 'relay' : 'p2p'
+
+    setConnectionMode(next)
+    updateModeUI()
+
+    // force reconnect
+    if (isConnected || isSearching) {
+      safeSend({ type: 'leave' })
+      resetPeer()
+      forceDisconnect()
+    }
+  }
 }

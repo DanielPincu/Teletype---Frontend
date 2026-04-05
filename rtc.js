@@ -8,6 +8,17 @@ let dataChannel = null
 let cameraTrack = null
 let isScreenSharing = false
 
+let connectionMode = localStorage.getItem('connectionMode') || 'p2p' // 'p2p' or 'relay'
+
+export function setConnectionMode(mode) {
+  connectionMode = mode === 'relay' ? 'relay' : 'p2p'
+  localStorage.setItem('connectionMode', connectionMode)
+}
+
+export function getConnectionMode() {
+  return connectionMode
+}
+
 function getStoredState(key, defaultValue = true) {
   const val = localStorage.getItem(key)
   if (val === null) return defaultValue
@@ -16,6 +27,22 @@ function getStoredState(key, defaultValue = true) {
 
 function setStoredState(key, value) {
   localStorage.setItem(key, value ? 'true' : 'false')
+}
+
+function getIceConfig() {
+  return {
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      {
+        urls: [
+          "turns:turn.radioteletype.net:5349?transport=tcp"
+        ],
+        username: "teletype",
+        credential: "StrongPassword123"
+      }
+    ],
+    iceTransportPolicy: connectionMode === 'relay' ? 'relay' : 'all'
+  }
 }
 
 export const rtcHandlers = {
@@ -31,9 +58,7 @@ export async function startPeer(isInitiator, id) {
   if (pc) return
 
   peerId = id
-  pc = new RTCPeerConnection({
-    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-  })
+  pc = new RTCPeerConnection(getIceConfig())
 
   pc.onconnectionstatechange = () => {
     if (!pc) return
