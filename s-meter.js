@@ -3,6 +3,10 @@
 const meter = document.getElementById('s-meter-bar')
 const leds = document.querySelectorAll('.s-led')
 
+function isMicEnabled() {
+  return localStorage.getItem('micEnabled') !== 'false'
+}
+
 function initMicMeter() {
   navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
     const ctx = new (window.AudioContext || window.webkitAudioContext)()
@@ -15,6 +19,17 @@ function initMicMeter() {
     source.connect(analyser)
 
     function updateMeter() {
+      // if mic is OFF, reset meter and skip
+      if (!isMicEnabled()) {
+        if (meter) meter.style.width = '0%'
+        leds.forEach(led => {
+          led.style.background = 'transparent'
+          led.style.boxShadow = ''
+        })
+        requestAnimationFrame(updateMeter)
+        return
+      }
+
       analyser.getByteFrequencyData(dataArray)
 
       let sum = 0

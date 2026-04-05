@@ -112,15 +112,17 @@
               <span class="text-sm glow-text">LOCAL OSCILLOSCOPE [YOU]</span>
               <div class="grid grid-cols-3 gap-2 w-full">
                 <button id="share"
-                  class="btn-retro w-full px-2 py-2 text-xs rounded hidden sm:inline-flex disabled:opacity-50 disabled:cursor-not-allowed">
-                  <i data-lucide="monitor" class="w-4 h-4"></i>
-                  <span>SHARE</span>
+                  class="btn-retro w-full px-2 py-2 text-xs rounded hidden sm:inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <i data-lucide="screen-share" class="w-4 h-4"></i>
+                  <span id="shareText">SHARE</span>
                 </button>
-                <button id="mic" class="btn-retro w-full px-2 py-2 text-xs rounded">
-                  <span>MIC OFF</span>
+                <button id="mic" class="btn-retro w-full px-2 py-2 text-xs rounded flex items-center justify-center gap-2">
+                  <i data-lucide="mic" class="w-4 h-4"></i>
+                  <span id="micText">MIC ON</span>
                 </button>
-                <button id="cam" class="btn-retro w-full px-2 py-2 text-xs rounded">
-                  <span>CAM OFF</span>
+                <button id="cam" class="btn-retro w-full px-2 py-2 text-xs rounded flex items-center justify-center gap-2">
+                  <i data-lucide="video" class="w-4 h-4"></i>
+                  <span id="camText">CAM ON</span>
                 </button>
               </div>
             </div>
@@ -128,9 +130,9 @@
             <div class="crt-screen aspect-video relative flex-1">
               <div class="scanline"></div>
               <div class="static-overlay" id="local-static"></div>
-              <div class="video-tube flex items-center justify-center" id="local-tube">
-                <video id="local" autoplay muted playsinline class="hidden-video"></video>
-                <div id="local-placeholder" class="placeholder-panel">
+              <div class="video-tube flex items-center justify-center w-full h-full overflow-hidden" id="local-tube">
+                <video id="local" autoplay muted playsinline class="hidden-video w-full h-full object-cover relative z-10"></video>
+                <div id="local-placeholder" class="placeholder-panel absolute inset-0 flex flex-col items-center justify-center text-center z-0">
                   <i data-lucide="video-off" class="w-16 h-16 mx-auto mb-2"></i>
                   <p>NO SIGNAL DETECTED</p>
                   <p class="text-xs mt-2">CHECK CAMERA INPUT</p>
@@ -151,9 +153,9 @@
             <div class="crt-screen aspect-video relative flex-1">
               <div class="scanline"></div>
               <div class="static-overlay active" id="remote-static"></div>
-              <div class="video-tube flex items-center justify-center" id="remote-tube">
-                <video id="remote" autoplay playsinline class="hidden-video"></video>
-                <div id="remote-placeholder" class="placeholder-panel">
+              <div class="video-tube flex items-center justify-center w-full h-full overflow-hidden" id="remote-tube">
+                <video id="remote" autoplay playsinline class="hidden-video w-full h-full object-cover relative z-10"></video>
+                <div id="remote-placeholder" class="placeholder-panel absolute inset-0 flex flex-col items-center justify-center text-center z-0">
                   <i data-lucide="radio" class="w-16 h-16 mx-auto mb-2"></i>
                   <p>SCANNING BANDS...</p>
                 </div>
@@ -197,7 +199,12 @@
     </div>
   </div>
   <script src="s-meter.js"></script>
-  <script src="app.js"></script>
+  <script type="module" src="ui.js"></script>
+  <script>
+    if (window.lucide) {
+      window.lucide.createIcons()
+    }
+  </script>
 </body>
 
 </html>
