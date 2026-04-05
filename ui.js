@@ -12,7 +12,9 @@ const micBtn = document.getElementById('mic')
 const camBtn = document.getElementById('cam')
 const shareBtn = document.getElementById('share')
 const fullscreenBtn = document.getElementById('fullscreenRemote')
-const modeBtn = document.getElementById('mode')
+const modeSwitch = document.getElementById('modeSwitch')
+const modeKnob = document.getElementById('modeKnob')
+const modeLabel = document.getElementById('modeLabel')
 
 // Initially disable share button
 if (shareBtn) {
@@ -280,24 +282,33 @@ randomBtn.onclick = () => {
 
   isSearching = true
 }
-// ---- MODE BUTTON ----
-if (modeBtn) {
+// ---- MODE SWITCH ----
+if (modeSwitch && modeKnob) {
+
   function updateModeUI() {
     const mode = getConnectionMode()
-    modeBtn.innerText = mode === 'relay' ? 'RELAY' : 'P2P'
-    modeBtn.classList.toggle('bg-green-700', mode === 'relay')
+
+    if (mode === 'relay') {
+      // LEFT position
+      modeKnob.style.transform = 'translateX(0px)'
+      modeSwitch.classList.add('bg-red-900')
+    } else {
+      // RIGHT position
+      modeKnob.style.transform = 'translateX(28px)'
+      modeSwitch.classList.remove('bg-red-900')
+    }
   }
 
   updateModeUI()
 
-  modeBtn.onclick = () => {
+  modeSwitch.onclick = () => {
     const current = getConnectionMode()
     const next = current === 'p2p' ? 'relay' : 'p2p'
 
     setConnectionMode(next)
     updateModeUI()
 
-    // force reconnect
+    // force reconnect if active
     if (isConnected || isSearching) {
       safeSend({ type: 'leave' })
       resetPeer()
