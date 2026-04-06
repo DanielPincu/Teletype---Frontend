@@ -14,7 +14,7 @@ function setStatus(text, color, blink = false) {
 
   statusEl.innerText = text
 
-  const led = statusEl.previousElementSibling
+  const led = statusEl.nextElementSibling
   if (!led) return
 
   // reset classes
@@ -339,7 +339,7 @@ connectSocket({
     }
     // handle room messages
     if (msg.type === 'waiting-in-room') {
-      setStatus('Waiting...', 'yellow', true)
+      setStatus('Tuning...', 'yellow', true)
       return
     }
 
