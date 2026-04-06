@@ -86,15 +86,15 @@ rtcHandlers.onIceStateChange = (stateStr) => {
 
 rtcHandlers.onConnectionType = (type) => {
   if (type === 'relay') {
-    setStatus('Connected (RELAY)', 'red')
+    setStatus('Connected(RELAY)', 'red')
   } else if (type === 'hybrid') {
-    setStatus('Connected (HYBRID)', 'yellow')
+    setStatus('Connected(HYBRID)', 'yellow')
   } else if (type === 'srflx') {
-    setStatus('Connected (STUN)', 'yellow')
+    setStatus('Connected(STUN)', 'yellow')
   } else if (type === 'host') {
-    setStatus('Connected (LOCAL)', 'green')
+    setStatus('Connected(LOCAL)', 'green')
   } else {
-    setStatus(`Connected (${type})`, 'green')
+    setStatus(`Connected(${type})`, 'green')
   }
 }
 
