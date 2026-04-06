@@ -248,7 +248,14 @@ const lockBtn = document.getElementById('lockChannel')
 
 connectSocket({
   onMessage: async (msg) => {
-    // handle room messages first
+    console.log('WS MSG:', msg)
+    // handle peer-found first
+    if (msg.type === 'peer-found') {
+      console.log('PEER FOUND:', msg)
+      await handleSignal(msg)
+      return
+    }
+    // handle room messages
     if (msg.type === 'waiting-in-room') {
       statusEl.innerText = 'Waiting for peer...'
       return
@@ -259,10 +266,6 @@ connectSocket({
       joinError = true
       renderDial()
       return
-    }
-
-    if (msg.type === 'peer-found') {
-      console.log('PEER FOUND:', msg)
     }
 
     await handleSignal(msg)
@@ -304,9 +307,17 @@ randomBtn.onclick = () => {
     })
 
     statusEl.innerText = 'Tuning channel...'
+    randomBtn.innerText = 'Cancel'
+    randomBtn.classList.remove('bg-gray-700')
+    randomBtn.classList.add('bg-red-700')
+    isSearching = true
   } else {
     safeSend({ type: 'find-peer' })
     statusEl.innerText = 'Searching...'
+    randomBtn.innerText = 'Cancel'
+    randomBtn.classList.remove('bg-gray-700')
+    randomBtn.classList.add('bg-red-700')
+    isSearching = true
   }
 }
 // ---- LOCK CHANNEL ----
