@@ -51,7 +51,8 @@ export const rtcHandlers = {
   onConnected: null,
   onDisconnected: null,
   onMessage: null,
-  onScreenShareStopped: null
+  onScreenShareStopped: null,
+  sendMessage: null,
 }
 
 export async function startPeer(isInitiator, id) {
@@ -124,10 +125,22 @@ export async function startPeer(isInitiator, id) {
 function setupDataChannel() {
   dataChannel.onopen = () => {
     rtcHandlers.onConnected?.()
+    rtcHandlers.sendMessage = sendMessage
   }
 
   dataChannel.onmessage = (e) => {
     rtcHandlers.onMessage?.(e.data)
+  }
+}
+
+export function sendMessage(text) {
+  if (!dataChannel || dataChannel.readyState !== 'open') return false
+
+  try {
+    dataChannel.send(text)
+    return true
+  } catch {
+    return false
   }
 }
 

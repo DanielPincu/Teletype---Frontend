@@ -7,6 +7,18 @@ const remoteVideo = document.getElementById('remote')
 const statusEl = document.getElementById('status')
 const randomBtn = document.getElementById('random')
 const chatBox = document.getElementById('chatBox')
+const chatInput = document.getElementById('chatInput')
+
+// Initially disable chat input until connected
+if (chatInput) {
+  chatInput.disabled = true
+  chatInput.placeholder = 'DISCONNECTED'
+}
+
+function scrollChatToBottom() {
+  if (!chatBox) return
+  chatBox.scrollTop = chatBox.scrollHeight
+}
 
 const micBtn = document.getElementById('mic')
 const camBtn = document.getElementById('cam')
@@ -49,6 +61,11 @@ rtcHandlers.onConnected = () => {
     shareBtn.disabled = false
     shareBtn.classList.remove('opacity-50', 'cursor-not-allowed')
   }
+
+  if (chatInput) {
+    chatInput.disabled = false
+    chatInput.placeholder = 'ENTER to transmit...'
+  }
 }
 
 rtcHandlers.onDisconnected = () => {
@@ -84,6 +101,11 @@ rtcHandlers.onDisconnected = () => {
     if (window.lucide) window.lucide.createIcons()
     isSharing = false
   }
+
+  if (chatInput) {
+    chatInput.disabled = true
+    chatInput.placeholder = 'DISCONNECTED'
+  }
 }
 
 rtcHandlers.onScreenShareStopped = () => {
@@ -112,6 +134,30 @@ rtcHandlers.onMessage = (text) => {
   const line = document.createElement('div')
   line.textContent = '< ' + text
   chatBox.appendChild(line)
+  scrollChatToBottom()
+}
+
+// ---- CHAT INPUT (ENTER TO SEND) ----
+if (chatInput) {
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+
+      const text = chatInput.value.trim()
+      if (!text) return
+
+      // send message via RTC data channel
+      rtcHandlers.sendMessage?.(text)
+
+      // also show locally
+      const line = document.createElement('div')
+      line.textContent = '> ' + text
+      chatBox.appendChild(line)
+      scrollChatToBottom()
+
+      chatInput.value = ''
+    }
+  })
 }
 
 // ---- BUTTONS ----
