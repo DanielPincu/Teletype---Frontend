@@ -7,8 +7,10 @@ let pendingCandidates = []
 let dataChannel = null
 let cameraTrack = null
 let isScreenSharing = false
+let connectTimeoutId = null
 
 let connectionMode = localStorage.getItem('connectionMode') || 'p2p' // 'p2p' or 'relay'
+const P2P_CONNECT_TIMEOUT_MS = 8000
 
 export function setConnectionMode(mode) {
   connectionMode = mode === 'relay' ? 'relay' : 'p2p'
@@ -60,6 +62,9 @@ export const rtcHandlers = {
   onDisconnected: null,
   onMessage: null,
   onScreenShareStopped: null,
+  onConnectionFailed: null,
+  onIceStateChange: null,
+  onConnectionType: null,
   sendMessage: null,
 }
 
@@ -69,13 +74,101 @@ export async function startPeer(isInitiator, id) {
   peerId = id
   pc = new RTCPeerConnection(getIceConfig())
 
+  const clearConnectTimeout = () => {
+    if (connectTimeoutId) {
+      clearTimeout(connectTimeoutId)
+      connectTimeoutId = null
+    }
+  }
+
   pc.onconnectionstatechange = () => {
     if (!pc) return
-    if (['disconnected','failed','closed'].includes(pc.connectionState)) {
+
+    if (pc.connectionState === 'connected') {
+      clearConnectTimeout()
+    }
+
+    if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
+      clearConnectTimeout()
       resetPeer()
       rtcHandlers.onDisconnected?.()
     }
   }
+
+  pc.oniceconnectionstatechange = () => {
+    if (!pc) return
+
+    rtcHandlers.onIceStateChange?.(pc.iceConnectionState)
+
+    if (['connected', 'completed'].includes(pc.iceConnectionState)) {
+      clearConnectTimeout()
+      return
+    }
+
+    if (['failed', 'disconnected', 'closed'].includes(pc.iceConnectionState)) {
+      clearConnectTimeout()
+      resetPeer()
+      rtcHandlers.onConnectionFailed?.(pc.iceConnectionState)
+      rtcHandlers.onDisconnected?.()
+    }
+  }
+
+  const detectConnectionType = async () => {
+    if (!pc) return
+
+    try {
+      const stats = await pc.getStats()
+
+      let selectedPair = null
+
+      stats.forEach(report => {
+        if (report.type === 'transport' && report.selectedCandidatePairId) {
+          selectedPair = stats.get(report.selectedCandidatePairId)
+        }
+      })
+
+      if (!selectedPair) return
+
+      const local = stats.get(selectedPair.localCandidateId)
+      const remote = stats.get(selectedPair.remoteCandidateId)
+
+      const localType = local?.candidateType
+      const remoteType = remote?.candidateType
+
+      let finalType = 'HYBRID'
+
+      // FULL RELAY
+      if (localType === 'relay' && remoteType === 'relay') {
+        finalType = 'relay'
+      }
+      // HYBRID (one relay, one not)
+      else if (
+        (localType === 'relay' && (remoteType === 'srflx' || remoteType === 'host')) ||
+        (remoteType === 'relay' && (localType === 'srflx' || localType === 'host'))
+      ) {
+        finalType = 'hybrid'
+      }
+      // PURE STUN
+      else if (localType === 'srflx' || remoteType === 'srflx') {
+        finalType = 'srflx'
+      }
+      // PURE LOCAL
+      else if (localType === 'host' && remoteType === 'host') {
+        finalType = 'host'
+      }
+
+      rtcHandlers.onConnectionType?.(finalType)
+    } catch (e) {
+      console.warn('getStats failed', e)
+    }
+  }
+
+  // run detection after connection established
+  pc.addEventListener('connectionstatechange', () => {
+    if (pc.connectionState === 'connected') {
+      setTimeout(detectConnectionType, 500)
+    }
+  })
 
   if (isInitiator) {
     dataChannel = pc.createDataChannel('chat')
@@ -120,6 +213,24 @@ export async function startPeer(isInitiator, id) {
     if (e.candidate) {
       safeSend({ type: "ice-candidate", target: peerId, candidate: e.candidate })
     }
+  }
+
+  if (connectionMode === 'p2p') {
+    connectTimeoutId = setTimeout(() => {
+      if (!pc) return
+
+      const iceState = pc.iceConnectionState
+      const connState = pc.connectionState
+
+      if (
+        !['connected', 'completed'].includes(iceState) &&
+        connState !== 'connected'
+      ) {
+        resetPeer()
+        rtcHandlers.onConnectionFailed?.('timeout')
+        rtcHandlers.onDisconnected?.()
+      }
+    }, P2P_CONNECT_TIMEOUT_MS)
   }
 
   if (isInitiator) {
@@ -263,6 +374,11 @@ export async function toggleScreenShare() {
 }
 
 export function resetPeer() {
+  if (connectTimeoutId) {
+    clearTimeout(connectTimeoutId)
+    connectTimeoutId = null
+  }
+
   if (dataChannel) {
     try { dataChannel.close() } catch {}
     dataChannel = null
@@ -278,5 +394,12 @@ export function resetPeer() {
     localStream = null
   }
 
+  pendingCandidates = []
+  cameraTrack = null
+
   peerId = null
 }
+
+window.addEventListener('beforeunload', () => {
+  resetPeer()
+})

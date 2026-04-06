@@ -78,6 +78,42 @@ rtcHandlers.onConnected = () => {
   }
 }
 
+rtcHandlers.onIceStateChange = (stateStr) => {
+  if (stateStr === 'checking') {
+    setStatus('Connecting...', 'yellow')
+  }
+}
+
+rtcHandlers.onConnectionType = (type) => {
+  if (type === 'relay') {
+    setStatus('Connected (RELAY)', 'red')
+  } else if (type === 'hybrid') {
+    setStatus('Connected (HYBRID)', 'yellow')
+  } else if (type === 'srflx') {
+    setStatus('Connected (STUN)', 'yellow')
+  } else if (type === 'host') {
+    setStatus('Connected (LOCAL)', 'green')
+  } else {
+    setStatus(`Connected (${type})`, 'green')
+  }
+}
+
+rtcHandlers.onConnectionFailed = (reason) => {
+  state.isConnected = false
+  state.isSearching = false
+
+  if (reason === 'timeout') {
+    setStatus('Direct failed (try RELAY)', 'red')
+  } else {
+    setStatus('Connection failed', 'red')
+  }
+
+  if (chatInput) {
+    chatInput.disabled = true
+    chatInput.placeholder = 'DISCONNECTED'
+  }
+}
+
 rtcHandlers.onDisconnected = () => {
   state.isConnected = false
   state.isSearching = false
