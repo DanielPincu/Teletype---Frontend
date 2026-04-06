@@ -5,6 +5,43 @@ import { toggleMic, toggleCam, toggleScreenShare } from './rtc.js'
 const localVideo = document.getElementById('local')
 const remoteVideo = document.getElementById('remote')
 const statusEl = document.getElementById('status')
+
+// Helper functions to control LED color and blinking
+let ledInterval = null
+
+function setStatus(text, color, blink = false) {
+  if (!statusEl) return
+
+  statusEl.innerText = text
+
+  const led = statusEl.previousElementSibling
+  if (!led) return
+
+  // reset classes
+  led.classList.remove('bg-green-500', 'bg-yellow-400', 'bg-red-500', 'opacity-100', 'opacity-20')
+
+  if (ledInterval) {
+    clearInterval(ledInterval)
+    ledInterval = null
+  }
+
+  if (color === 'green') led.classList.add('bg-green-500')
+  if (color === 'yellow') led.classList.add('bg-yellow-400')
+  if (color === 'red') led.classList.add('bg-red-500')
+
+  if (blink) {
+    let visible = true
+
+    // faster blink for red (busy), normal for others
+    const speed = color === 'red' ? 150 : 500
+
+    ledInterval = setInterval(() => {
+      visible = !visible
+      led.classList.toggle('opacity-20', !visible)
+    }, speed)
+  }
+}
+
 const randomBtn = document.getElementById('random')
 const chatBox = document.getElementById('chatBox')
 const chatInput = document.getElementById('chatInput')
@@ -48,7 +85,7 @@ rtcHandlers.onRemoteStream = (stream) => {
 }
 
 rtcHandlers.onConnected = () => {
-  statusEl.innerText = 'Connected'
+  setStatus('Connected', 'green')
 
   randomBtn.innerText = 'Disconnect'
   randomBtn.classList.remove('bg-gray-700')
@@ -69,7 +106,7 @@ rtcHandlers.onConnected = () => {
 }
 
 rtcHandlers.onDisconnected = () => {
-  statusEl.innerText = 'Disconnected'
+  setStatus('Idle', 'green')
 
   randomBtn.innerText = 'Connect'
   randomBtn.classList.remove('bg-red-700')
@@ -302,12 +339,12 @@ connectSocket({
     }
     // handle room messages
     if (msg.type === 'waiting-in-room') {
-      statusEl.innerText = 'Waiting for peer...'
+      setStatus('Waiting...', 'yellow', true)
       return
     }
 
     if (msg.type === 'room-busy') {
-      statusEl.innerText = 'CHANNEL BUSY'
+      setStatus('CHANNEL BUSY', 'red', true)
       joinError = true
       renderDial()
       return
@@ -329,7 +366,7 @@ randomBtn.onclick = () => {
   // If searching → cancel
   if (isSearching) {
     safeSend({ type: 'leave' })
-    statusEl.innerText = 'Idle'
+    setStatus('Idle', 'green')
 
     randomBtn.innerText = 'Connect'
     randomBtn.classList.remove('bg-red-700')
@@ -351,14 +388,14 @@ randomBtn.onclick = () => {
       roomId
     })
 
-    statusEl.innerText = 'Tuning channel...'
+    setStatus('Tuning...', 'yellow', true)
     randomBtn.innerText = 'Cancel'
     randomBtn.classList.remove('bg-gray-700')
     randomBtn.classList.add('bg-red-700')
     isSearching = true
   } else {
     safeSend({ type: 'find-peer' })
-    statusEl.innerText = 'Searching...'
+    setStatus('Searching...', 'yellow', true)
     randomBtn.innerText = 'Cancel'
     randomBtn.classList.remove('bg-gray-700')
     randomBtn.classList.add('bg-red-700')

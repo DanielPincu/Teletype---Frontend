@@ -32,10 +32,6 @@
     <div class="chassis p-4 md:p-8">
 
       <div class="mb-4 flex items-center gap-4 flex-wrap w-full">
-        <div class="flex items-center gap-2">
-          <div class="w-5 h-5 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.8)]"></div>
-          <span id="status" class="text-sm text-amber-200">Idle</span>
-        </div>
         <div class="flex items-center gap-4 ml-auto">
           <div class="flex items-center gap-2">
             <div id="pwr-led" class="led active w-2 h-5"></div>
@@ -86,10 +82,16 @@
                     <span class="text-xs text-red-400">CHANNEL</span>
                   </div>
                 </div>
-                <button id="random"
-                  class="btn-retro w-32 px-4 py-2 rounded font-bold text-sm flex items-center justify-center gap-2">
-                  <span id="randomText">Connect</span>
-                </button>
+                <div class="flex flex-col items-start gap-1 mr-2">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.8)]"></div>
+                    <span id="status" class="text-sm text-amber-200">Idle</span>
+                  </div>
+                  <button id="random"
+                    class="btn-retro w-32 px-4 py-2 rounded font-bold text-sm flex items-center justify-center gap-2">
+                    <span id="randomText">Connect</span>
+                  </button>
+                </div>
               </div>
 
               <!-- S-METER RIGHT SIDE -->
