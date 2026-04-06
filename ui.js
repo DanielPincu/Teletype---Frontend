@@ -9,6 +9,80 @@ const statusEl = document.getElementById('status')
 // Helper functions to control LED color and blinking
 let ledInterval = null
 
+// ---- REALISTIC RTTY (CONTINUOUS FSK) ----
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+
+let rttyOsc = null
+let rttyGain = null
+
+function startRTTY() {
+  if (!audioCtx || rttyOsc) return
+
+  rttyOsc = audioCtx.createOscillator()
+  rttyGain = audioCtx.createGain()
+
+  rttyOsc.type = 'sine'
+  rttyOsc.frequency.value = 2125 // start MARK
+
+  rttyGain.gain.value = 0.03
+
+  rttyOsc.connect(rttyGain)
+  rttyGain.connect(audioCtx.destination)
+
+  rttyOsc.start()
+}
+
+function stopRTTY(delay = 0.1) {
+  if (!rttyOsc) return
+
+  const now = audioCtx.currentTime
+  rttyGain.gain.setTargetAtTime(0.0001, now, delay)
+
+  setTimeout(() => {
+    try { rttyOsc.stop() } catch {}
+    rttyOsc.disconnect()
+    rttyGain.disconnect()
+    rttyOsc = null
+    rttyGain = null
+  }, delay * 1000 + 50)
+}
+
+function sendRTTY(text = '') {
+  if (!audioCtx) return
+
+  const baud = 45.45
+  const bitDuration = 1 / baud
+
+  const MARK = 2125
+  const SPACE = 2295
+
+  startRTTY()
+
+  let t = audioCtx.currentTime
+
+  function shift(freq, time) {
+    rttyOsc.frequency.setValueAtTime(freq, time)
+  }
+
+  text.toUpperCase().split('').forEach(() => {
+    // start bit (SPACE)
+    shift(SPACE, t)
+    t += bitDuration
+
+    // fake 5-bit pattern but smooth
+    for (let i = 0; i < 5; i++) {
+      shift(Math.random() > 0.5 ? MARK : SPACE, t)
+      t += bitDuration
+    }
+
+    // stop (MARK)
+    shift(MARK, t)
+    t += bitDuration * 1.5
+  })
+
+  stopRTTY((t - audioCtx.currentTime) + 0.05)
+}
+
 function setStatus(text, color, blink = false) {
   if (!statusEl) return
 
@@ -167,11 +241,34 @@ function forceDisconnect() {
   rtcHandlers.onDisconnected?.()
 }
 
-rtcHandlers.onMessage = (text) => {
+// Gradually renders RTTY text to chatBox, simulating teletype (typewriter) effect
+function typeRTTYDisplay(text, prefix = '') {
+  if (!chatBox) return
+
   const line = document.createElement('div')
-  line.textContent = '< ' + text
+  line.textContent = prefix
   chatBox.appendChild(line)
   scrollChatToBottom()
+
+  const baud = 45.45
+  const bitDuration = 1 / baud
+  const charDuration = bitDuration * 7 // start + 5 data + stop
+
+  let i = 0
+  function step() {
+    if (i >= text.length) return
+    line.textContent += text[i]
+    scrollChatToBottom()
+    i++
+    setTimeout(step, charDuration * 1000)
+  }
+
+  step()
+}
+
+rtcHandlers.onMessage = (text) => {
+  sendRTTY(text)
+  typeRTTYDisplay(text, '< ')
 }
 
 // ---- CHAT INPUT (ENTER TO SEND) ----
@@ -185,12 +282,10 @@ if (chatInput) {
 
       // send message via RTC data channel
       rtcHandlers.sendMessage?.(text)
+      sendRTTY(text)
 
-      // also show locally
-      const line = document.createElement('div')
-      line.textContent = '> ' + text
-      chatBox.appendChild(line)
-      scrollChatToBottom()
+      // also show locally (typewriter effect)
+      typeRTTYDisplay(text, '> ')
 
       chatInput.value = ''
     }
