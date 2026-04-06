@@ -29,19 +29,27 @@ function setStoredState(key, value) {
   localStorage.setItem(key, value ? 'true' : 'false')
 }
 
+// strict modes. Either this or that. Punktum.
 function getIceConfig() {
+  if (connectionMode === 'relay') {
+    return {
+      iceServers: [
+        {
+          urls: ["turns:turn.radioteletype.net:5349?transport=tcp"],
+          username: "teletype",
+          credential: "StrongPassword123"
+        }
+      ],
+      iceTransportPolicy: 'relay'
+    }
+  }
+
+  // P2P ONLY (no TURN fallback)
   return {
     iceServers: [
-      { urls: "stun:stun.l.google.com:19302" },
-      {
-        urls: [
-          "turns:turn.radioteletype.net:5349?transport=tcp"
-        ],
-        username: "teletype",
-        credential: "StrongPassword123"
-      }
+      { urls: "stun:stun.l.google.com:19302" }
     ],
-    iceTransportPolicy: connectionMode === 'relay' ? 'relay' : 'all'
+    iceTransportPolicy: 'all'
   }
 }
 
@@ -81,7 +89,6 @@ export async function startPeer(isInitiator, id) {
 
   localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
 
-  // apply persisted mic/cam state
   const micEnabled = getStoredState('micEnabled', true)
   const camEnabled = getStoredState('camEnabled', true)
 
@@ -155,7 +162,6 @@ export async function handleSignal(msg) {
     await startPeer(false, msg.from)
     await pc.setRemoteDescription(msg.sdp)
 
-    // flush queued ICE candidates
     for (const c of pendingCandidates) {
       try { await pc.addIceCandidate(c) } catch {}
     }
@@ -170,7 +176,6 @@ export async function handleSignal(msg) {
   if (msg.type === "answer") {
     await pc.setRemoteDescription(msg.sdp)
 
-    // flush queued ICE candidates
     for (const c of pendingCandidates) {
       try { await pc.addIceCandidate(c) } catch {}
     }
@@ -218,44 +223,35 @@ export async function toggleScreenShare() {
   try {
     const sender = pc.getSenders().find(s => s.track?.kind === 'video')
 
-    // STOP sharing → switch back to camera
     if (isScreenSharing) {
       const camTrack = cameraTrack || localStream?.getVideoTracks()[0]
       if (sender && camTrack) sender.replaceTrack(camTrack)
 
-      // update local preview back to camera
       if (localStream) {
         rtcHandlers.onLocalStream?.(localStream)
       }
 
       isScreenSharing = false
-
-      // notify UI that sharing stopped
       rtcHandlers.onScreenShareStopped?.()
       return true
     }
 
-    // START sharing
     const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true })
     const screenTrack = screenStream.getVideoTracks()[0]
 
     if (sender) sender.replaceTrack(screenTrack)
 
-    // update local preview to screen
     rtcHandlers.onLocalStream?.(screenStream)
 
     screenTrack.onended = () => {
       const camTrack = cameraTrack || localStream?.getVideoTracks()[0]
       if (sender && camTrack) sender.replaceTrack(camTrack)
 
-      // restore camera preview
       if (localStream) {
         rtcHandlers.onLocalStream?.(localStream)
       }
 
       isScreenSharing = false
-
-      // notify UI that sharing stopped
       rtcHandlers.onScreenShareStopped?.()
     }
 
@@ -267,19 +263,16 @@ export async function toggleScreenShare() {
 }
 
 export function resetPeer() {
-  // close data channel
   if (dataChannel) {
     try { dataChannel.close() } catch {}
     dataChannel = null
   }
 
-  // close peer connection
   if (pc) {
     try { pc.close() } catch {}
     pc = null
   }
 
-  // stop local tracks (camera + mic)
   if (localStream) {
     localStream.getTracks().forEach(t => t.stop())
     localStream = null
