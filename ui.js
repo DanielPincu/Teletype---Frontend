@@ -241,14 +241,33 @@ if (camBtn) {
 
 if (window.lucide) window.lucide.createIcons()
 
+let isSearching = false
+let isConnected = false
+let isLocked = false
+const lockBtn = document.getElementById('lockChannel')
+
 connectSocket({
   onMessage: async (msg) => {
+    // handle room messages first
+    if (msg.type === 'waiting-in-room') {
+      statusEl.innerText = 'Waiting for peer...'
+      return
+    }
+
+    if (msg.type === 'room-busy') {
+      statusEl.innerText = 'CHANNEL BUSY'
+      joinError = true
+      renderDial()
+      return
+    }
+
+    if (msg.type === 'peer-found') {
+      console.log('PEER FOUND:', msg)
+    }
+
     await handleSignal(msg)
   }
 })
-
-let isSearching = false
-let isConnected = false
 
 randomBtn.onclick = () => {
   // If connected → disconnect
@@ -272,15 +291,36 @@ randomBtn.onclick = () => {
     return
   }
 
-  // Start searching
-  safeSend({ type: 'find-peer' })
-  statusEl.innerText = 'Searching...'
+  // Start searching or join locked channel
+  if (isLocked) {
+    const roomId = window.getDialRoomId()
+    console.log('LOCKED → joining room:', roomId)
 
-  randomBtn.innerText = 'Cancel'
-  randomBtn.classList.remove('bg-gray-700')
-  randomBtn.classList.add('bg-red-700')
+    resetPeer()
 
-  isSearching = true
+    safeSend({
+      type: 'join-room',
+      roomId
+    })
+
+    statusEl.innerText = 'Tuning channel...'
+  } else {
+    safeSend({ type: 'find-peer' })
+    statusEl.innerText = 'Searching...'
+  }
+}
+// ---- LOCK CHANNEL ----
+if (lockBtn) {
+  lockBtn.onclick = () => {
+    isLocked = !isLocked
+
+    lockBtn.innerText = isLocked ? '🔒 LOCKED' : '🔓 OPEN'
+
+    if (dialEl) {
+      dialEl.classList.toggle('ring-2', isLocked)
+      dialEl.classList.toggle('ring-orange-500', isLocked)
+    }
+  }
 }
 // ---- MODE SWITCH ----
 if (modeSwitch && modeKnob) {
