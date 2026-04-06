@@ -1,5 +1,6 @@
 import { connectSocket } from './network.js'
 import { handleSignal } from './rtc.js'
+import { state } from './state.js'
 
 export function initConnection({
   randomBtn,
@@ -10,14 +11,6 @@ export function initConnection({
   getRoomId,
   dialSetJoinError
 }) {
-  let isSearching = false
-  let isConnected = false
-  let isLocked = false
-
-  // expose setter (used by lock switch if needed later, or else DELETE it :)) Never gonna happen )
-  window.__setLockState = (val) => {
-    isLocked = val
-  }
 
   function forceDisconnect() {
     rtcHandlers.onDisconnected?.()
@@ -51,16 +44,16 @@ export function initConnection({
 
   randomBtn.onclick = () => {
     // disconnect
-    if (isConnected) {
+    if (state.isConnected) {
       safeSend({ type: 'leave' })
       resetPeer()
       forceDisconnect()
-      isConnected = false
+      state.isConnected = false
       return
     }
 
     // cancel search
-    if (isSearching) {
+    if (state.isSearching) {
       safeSend({ type: 'leave' })
 
       setStatus('Idle', 'green')
@@ -69,12 +62,12 @@ export function initConnection({
       randomBtn.classList.remove('bg-red-700')
       randomBtn.classList.add('bg-gray-700')
 
-      isSearching = false
+      state.isSearching = false
       return
     }
 
     // join locked room
-    if (isLocked) {
+    if (state.isLocked) {
       const roomId = getRoomId()
 
       resetPeer()
@@ -89,7 +82,7 @@ export function initConnection({
       randomBtn.classList.remove('bg-gray-700')
       randomBtn.classList.add('bg-red-700')
 
-      isSearching = true
+      state.isSearching = true
       return
     }
 
@@ -101,19 +94,19 @@ export function initConnection({
     randomBtn.classList.remove('bg-gray-700')
     randomBtn.classList.add('bg-red-700')
 
-    isSearching = true
+    state.isSearching = true
   }
 
   // sync with RTC events
   rtcHandlers.onConnected = ((original) => () => {
     original?.()
-    isConnected = true
-    isSearching = false
+    state.isConnected = true
+    state.isSearching = false
   })(rtcHandlers.onConnected)
 
   rtcHandlers.onDisconnected = ((original) => () => {
     original?.()
-    isConnected = false
-    isSearching = false
+    state.isConnected = false
+    state.isSearching = false
   })(rtcHandlers.onDisconnected)
 }

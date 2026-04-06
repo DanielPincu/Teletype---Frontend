@@ -5,6 +5,7 @@ import { initDial, getRoomId, setJoinError as dialSetJoinError, setLocked as dia
 import { initControls } from './controls.js'
 import { initConnection } from './connection.js'
 import { setStatus } from './status.js'
+import { state } from './state.js'
 
 const localVideo = document.getElementById('local')
 const remoteVideo = document.getElementById('remote')
@@ -45,8 +46,6 @@ initControls({
   remoteVideo
 })
 
-let isLocked = false
-
 rtcHandlers.onLocalStream = (stream) => {
   localVideo.srcObject = stream
   localVideo.classList.remove('hidden-video')
@@ -59,6 +58,9 @@ rtcHandlers.onRemoteStream = (stream) => {
 }
 
 rtcHandlers.onConnected = () => {
+  state.isConnected = true
+  state.isSearching = false
+
   setStatus('Connected', 'green')
 
   randomBtn.innerText = 'Disconnect'
@@ -77,6 +79,9 @@ rtcHandlers.onConnected = () => {
 }
 
 rtcHandlers.onDisconnected = () => {
+  state.isConnected = false
+  state.isSearching = false
+
   setStatus('Idle', 'green')
 
   randomBtn.innerText = 'Connect'
@@ -186,7 +191,7 @@ if (modeSwitch && modeKnob) {
     updateModeUI()
 
     // force reconnect if active
-    if (isConnected || isSearching) {
+    if (state.isConnected || state.isSearching) {
       safeSend({ type: 'leave' })
       resetPeer()
       forceDisconnect()
@@ -201,7 +206,7 @@ const lockKnob = document.getElementById('lockKnob')
 function updateLockUI() {
   if (!lockKnob || !lockSwitch) return
 
-  if (isLocked) {
+  if (state.isLocked) {
     // RIGHT = LOCK
     lockKnob.style.transform = 'translateX(28px)'
 
@@ -220,14 +225,14 @@ if (lockSwitch) {
   updateLockUI()
 
   lockSwitch.onclick = () => {
-    isLocked = !isLocked
-    dialSetLocked(isLocked)
+    state.isLocked = !state.isLocked
+    dialSetLocked(state.isLocked)
     updateLockUI()
 
     // optional visual feedback on dial
     if (dialEl) {
-      dialEl.classList.toggle('ring-2', isLocked)
-      dialEl.classList.toggle('ring-orange-500', isLocked)
+      dialEl.classList.toggle('ring-2', state.isLocked)
+      dialEl.classList.toggle('ring-orange-500', state.isLocked)
     }
     // Removed renderDial()
   }
