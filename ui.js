@@ -244,7 +244,6 @@ if (window.lucide) window.lucide.createIcons()
 let isSearching = false
 let isConnected = false
 let isLocked = false
-const lockBtn = document.getElementById('lockChannel')
 
 connectSocket({
   onMessage: async (msg) => {
@@ -320,21 +319,15 @@ randomBtn.onclick = () => {
     isSearching = true
   }
 }
-// ---- LOCK CHANNEL ----
-if (lockBtn) {
-  lockBtn.onclick = () => {
-    isLocked = !isLocked
-
-    lockBtn.innerText = isLocked ? '🔒 LOCKED' : '🔓 OPEN'
-
-    if (dialEl) {
-      dialEl.classList.toggle('ring-2', isLocked)
-      dialEl.classList.toggle('ring-orange-500', isLocked)
-    }
-  }
-}
 // ---- MODE SWITCH ----
 if (modeSwitch && modeKnob) {
+  // prevent flicker on load by setting correct initial position BEFORE paint
+  modeKnob.style.transition = 'none'
+
+  const initialMode = getConnectionMode()
+  modeKnob.style.transform = initialMode === 'relay'
+    ? 'translateX(0px)'
+    : 'translateX(28px)'
 
   function updateModeUI() {
     const mode = getConnectionMode()
@@ -352,6 +345,11 @@ if (modeSwitch && modeKnob) {
 
   updateModeUI()
 
+  // re-enable transition after initial paint
+  setTimeout(() => {
+    modeKnob.style.transition = ''
+  }, 0)
+
   modeSwitch.onclick = () => {
     const current = getConnectionMode()
     const next = current === 'p2p' ? 'relay' : 'p2p'
@@ -365,6 +363,44 @@ if (modeSwitch && modeKnob) {
       resetPeer()
       forceDisconnect()
     }
+  }
+}
+
+// ---- LOCK SWITCH (OPEN / LOCK) ----
+const lockSwitch = document.getElementById('lockSwitch')
+const lockKnob = document.getElementById('lockKnob')
+
+function updateLockUI() {
+  if (!lockKnob || !lockSwitch) return
+
+  if (isLocked) {
+    // RIGHT = LOCK
+    lockKnob.style.transform = 'translateX(28px)'
+
+    lockSwitch.classList.remove('bg-gray-800')
+    lockSwitch.classList.add('bg-red-900')
+  } else {
+    // LEFT = OPEN
+    lockKnob.style.transform = 'translateX(0px)'
+
+    lockSwitch.classList.remove('bg-red-900')
+    lockSwitch.classList.add('bg-gray-800')
+  }
+}
+
+if (lockSwitch) {
+  updateLockUI()
+
+  lockSwitch.onclick = () => {
+    isLocked = !isLocked
+    updateLockUI()
+
+    // optional visual feedback on dial
+    if (dialEl) {
+      dialEl.classList.toggle('ring-2', isLocked)
+      dialEl.classList.toggle('ring-orange-500', isLocked)
+    }
+    renderDial()
   }
 }
 // ---- DIAL ----
@@ -387,13 +423,13 @@ function renderDial() {
 
     const upBtn = document.createElement('button')
     upBtn.innerText = '▲'
-    upBtn.disabled = isConnected
+    upBtn.disabled = isConnected || isLocked
     upBtn.className =
       'w-10 h-8 flex items-center justify-center text-2xl font-bold bg-black border border-green-700 text-green-400 hover:bg-green-900/30 hover:text-green-200 transition-all duration-150 active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed'
 
     const downBtn = document.createElement('button')
     downBtn.innerText = '▼'
-    downBtn.disabled = isConnected
+    downBtn.disabled = isConnected || isLocked
     downBtn.className =
       'w-10 h-8 flex items-center justify-center text-2xl font-bold bg-black border border-green-700 text-green-400 hover:bg-green-900/30 hover:text-green-200 transition-all duration-150 active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed'
 
@@ -401,6 +437,7 @@ function renderDial() {
     display.className = `
       relative w-14 h-20 flex items-center justify-center
       bg-black border rounded-md overflow-hidden
+      ${isLocked ? 'opacity-50' : ''}
       ${joinError
         ? 'border-orange-700 shadow-[0_0_10px_rgba(255,120,0,0.7)]'
         : 'border-orange-500 shadow-[0_0_12px_rgba(255,140,0,0.6)]'}
