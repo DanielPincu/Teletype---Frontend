@@ -2,7 +2,7 @@ export function initChat({ chatBox, chatInput, rtcHandlers, sendRTTY }) {
 
   function scrollChatToBottom() {
     if (!chatBox) return
-    chatBox.scrollTop = chatBox.scrollHeight
+    chatBox.lastElementChild?.scrollIntoView({ block: 'end' })
   }
 
   function typeRTTYDisplay(text, prefix = '') {

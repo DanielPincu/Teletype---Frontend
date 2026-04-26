@@ -4,7 +4,8 @@ let pc = null
 let localStream = null
 let peerId = null
 let pendingCandidates = []
-let dataChannel = null
+let chatChannel = null
+let fileTransferChannel = null
 let cameraTrack = null
 let isScreenSharing = false
 let connectTimeoutId = null
@@ -61,11 +62,18 @@ export const rtcHandlers = {
   onConnected: null,
   onDisconnected: null,
   onMessage: null,
+  onFileChannelOpen: null,
+  onFileChannelClosed: null,
+  onFileControlMessage: null,
+  onFileData: null,
+  onFileTransferReset: null,
   onScreenShareStopped: null,
   onConnectionFailed: null,
   onIceStateChange: null,
   onConnectionType: null,
   sendMessage: null,
+  sendFileControl: null,
+  sendFileChunk: null,
 }
 
 export async function startPeer(isInitiator, id) {
@@ -171,12 +179,23 @@ export async function startPeer(isInitiator, id) {
   })
 
   if (isInitiator) {
-    dataChannel = pc.createDataChannel('chat')
-    setupDataChannel()
+    chatChannel = pc.createDataChannel('chat')
+    setupChatChannel(chatChannel)
+
+    fileTransferChannel = pc.createDataChannel('file-transfer', { ordered: true })
+    setupFileTransferChannel(fileTransferChannel)
   } else {
     pc.ondatachannel = (e) => {
-      dataChannel = e.channel
-      setupDataChannel()
+      if (e.channel.label === 'chat') {
+        chatChannel = e.channel
+        setupChatChannel(chatChannel)
+        return
+      }
+
+      if (e.channel.label === 'file-transfer') {
+        fileTransferChannel = e.channel
+        setupFileTransferChannel(fileTransferChannel)
+      }
     }
   }
 
@@ -240,22 +259,88 @@ export async function startPeer(isInitiator, id) {
   }
 }
 
-function setupDataChannel() {
-  dataChannel.onopen = () => {
+function setupChatChannel(channel) {
+  channel.onopen = () => {
     rtcHandlers.onConnected?.()
     rtcHandlers.sendMessage = sendMessage
   }
 
-  dataChannel.onmessage = (e) => {
+  channel.onmessage = (e) => {
     rtcHandlers.onMessage?.(e.data)
   }
 }
 
+function setupFileTransferChannel(channel) {
+  rtcHandlers.sendFileControl = sendFileControl
+  rtcHandlers.sendFileChunk = sendFileChunk
+
+  channel.onopen = () => {
+    rtcHandlers.onFileChannelOpen?.(channel)
+  }
+
+  channel.onclose = () => {
+    rtcHandlers.onFileChannelClosed?.()
+  }
+
+  channel.onerror = () => {
+    rtcHandlers.onFileChannelClosed?.()
+  }
+
+  channel.onmessage = (e) => {
+    if (typeof e.data === 'string') {
+      try {
+        const payload = JSON.parse(e.data)
+        rtcHandlers.onFileControlMessage?.(payload)
+      } catch (error) {
+        console.warn('Invalid file control message', error)
+      }
+      return
+    }
+
+    if (e.data instanceof ArrayBuffer) {
+      rtcHandlers.onFileData?.(e.data)
+      return
+    }
+
+    if (e.data?.arrayBuffer) {
+      e.data.arrayBuffer()
+        .then((buffer) => rtcHandlers.onFileData?.(buffer))
+        .catch((error) => console.warn('Failed to read file chunk', error))
+    }
+  }
+}
+
 export function sendMessage(text) {
-  if (!dataChannel || dataChannel.readyState !== 'open') return false
+  if (!chatChannel || chatChannel.readyState !== 'open') return false
 
   try {
-    dataChannel.send(text)
+    chatChannel.send(text)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function getFileTransferChannel() {
+  return fileTransferChannel
+}
+
+export function sendFileControl(payload) {
+  if (!fileTransferChannel || fileTransferChannel.readyState !== 'open') return false
+
+  try {
+    fileTransferChannel.send(JSON.stringify(payload))
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function sendFileChunk(chunk) {
+  if (!fileTransferChannel || fileTransferChannel.readyState !== 'open') return false
+
+  try {
+    fileTransferChannel.send(chunk)
     return true
   } catch {
     return false
@@ -379,9 +464,14 @@ export function resetPeer() {
     connectTimeoutId = null
   }
 
-  if (dataChannel) {
-    try { dataChannel.close() } catch {}
-    dataChannel = null
+  if (chatChannel) {
+    try { chatChannel.close() } catch {}
+    chatChannel = null
+  }
+
+  if (fileTransferChannel) {
+    try { fileTransferChannel.close() } catch {}
+    fileTransferChannel = null
   }
 
   if (pc) {
@@ -396,6 +486,11 @@ export function resetPeer() {
 
   pendingCandidates = []
   cameraTrack = null
+
+  rtcHandlers.sendMessage = null
+  rtcHandlers.sendFileControl = null
+  rtcHandlers.sendFileChunk = null
+  rtcHandlers.onFileTransferReset?.()
 
   peerId = null
 }

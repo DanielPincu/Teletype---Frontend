@@ -1,6 +1,7 @@
 import { connectSocket, safeSend } from './network.js'
 import { rtcHandlers, handleSignal, resetPeer, setConnectionMode, getConnectionMode } from './rtc.js'
 import { initChat } from './chat.js'
+import { initFileTransfer } from './file-transfer.js'
 import { initDial, getRoomId, setJoinError as dialSetJoinError, setLocked as dialSetLocked } from './dial.js'
 import { initControls } from './controls.js'
 import { initConnection } from './connection.js'
@@ -16,6 +17,24 @@ import { sendRTTY } from './rtty.js'
 const randomBtn = document.getElementById('random')
 const chatBox = document.getElementById('chatBox')
 const chatInput = document.getElementById('chatInput')
+const fileInput = document.getElementById('fileInput')
+const fileButton = document.getElementById('fileButton')
+const transferPanel = document.getElementById('transferPanel')
+const transferTitle = document.getElementById('transferTitle')
+const transferMeta = document.getElementById('transferMeta')
+const transferStatus = document.getElementById('transferStatus')
+const transferProgressBar = document.getElementById('transferProgressBar')
+const transferProgressText = document.getElementById('transferProgressText')
+const transferSpeed = document.getElementById('transferSpeed')
+const transferActionPrimary = document.getElementById('transferActionPrimary')
+const transferActionSecondary = document.getElementById('transferActionSecondary')
+const transferCancelBtn = document.getElementById('transferCancelBtn')
+const receivedFilesList = document.getElementById('receivedFilesList')
+const receivedFilesEmpty = document.getElementById('receivedFilesEmpty')
+const receivedFilesCount = document.getElementById('receivedFilesCount')
+const fileToastRegion = document.getElementById('fileToastRegion')
+const transferDrawer = document.getElementById('transferDrawer')
+const transferDrawerToggle = document.getElementById('transferDrawerToggle')
 
 // Initially disable chat input until connected
 if (chatInput) {
@@ -30,6 +49,31 @@ const shareBtn = document.getElementById('share')
 const fullscreenBtn = document.getElementById('fullscreenRemote')
 const modeSwitch = document.getElementById('modeSwitch')
 const modeKnob = document.getElementById('modeKnob')
+let isSharing = false
+
+function forceDisconnect() {
+  rtcHandlers.onDisconnected?.()
+}
+
+function setTransferDrawerCollapsed(collapsed) {
+  if (!transferDrawer || !transferDrawerToggle) return
+
+  transferDrawer.dataset.collapsed = collapsed ? 'true' : 'false'
+  transferDrawerToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true')
+}
+
+function openTransferDrawer() {
+  setTransferDrawerCollapsed(false)
+}
+
+if (transferDrawer && transferDrawerToggle) {
+  setTransferDrawerCollapsed(true)
+
+  transferDrawerToggle.addEventListener('click', () => {
+    const collapsed = transferDrawer.dataset.collapsed === 'true'
+    setTransferDrawerCollapsed(!collapsed)
+  })
+}
 
 
 const dialEl = document.getElementById('dial')
@@ -187,6 +231,28 @@ if (chatInput) {
 if (chatBox && chatInput && rtcHandlers) {
   initChat({ chatBox, chatInput, rtcHandlers, sendRTTY })
 }
+
+initFileTransfer({
+  rtcHandlers,
+  fileInput,
+  fileButton,
+  transferPanel,
+  transferTitle,
+  transferMeta,
+  transferStatus,
+  transferProgressBar,
+  transferProgressText,
+  transferSpeed,
+  transferActionPrimary,
+  transferActionSecondary,
+  transferCancelBtn,
+  receivedFilesList,
+  receivedFilesEmpty,
+  receivedFilesCount,
+  fileToastRegion,
+  notifyWithRTTY: (text) => sendRTTY(text),
+  requestDrawerOpen: openTransferDrawer,
+})
 
 // ---- MODE SWITCH ----
 if (modeSwitch && modeKnob) {
