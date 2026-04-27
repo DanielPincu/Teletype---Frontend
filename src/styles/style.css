@@ -255,11 +255,13 @@ body::before {
 
 .transfer-drawer {
   position: fixed;
-  top: 20rem;
+  top: 1rem;
+  bottom: 1rem;
   right: 0;
   z-index: 32;
   width: min(28rem, calc(100vw - 1rem));
-  max-height: calc(100vh - 7rem);
+  height: calc(100vh - 2rem);
+  max-height: calc(100vh - 2rem);
   transform: translateX(0);
   transition: transform 0.28s ease;
   pointer-events: none;
@@ -271,10 +273,11 @@ body::before {
 
 .transfer-drawer-toggle {
   position: absolute;
-  top: 1rem;
+  top: 50%;
   left: -2.8rem;
   width: 2.8rem;
   height: 10rem;
+  transform: translateY(-50%);
   border: 1px solid rgba(245, 158, 11, 0.55);
   border-right: none;
   border-radius: 14px 0 0 14px;
@@ -299,7 +302,8 @@ body::before {
 
 .transfer-station {
   position: relative;
-  max-height: calc(100vh - 7rem);
+  height: 100%;
+  max-height: calc(100vh - 2rem);
   overflow-y: auto;
   background: #140902;
   box-shadow:

@@ -13,6 +13,14 @@ export default function TransferDrawer({
   onToggleDrawer,
 }) {
   const fileInputRef = useRef(null)
+  const showStandbyPanel = !fileTransfer.panelVisible
+  const panelTitle = showStandbyPanel ? 'File Transfer' : fileTransfer.title
+  const panelMeta = showStandbyPanel
+    ? 'Choose a file to send once the peer is connected.'
+    : fileTransfer.meta
+  const panelStatus = showStandbyPanel ? 'Standing by for transfer.' : fileTransfer.status
+  const panelProgress = showStandbyPanel ? 0 : fileTransfer.progressPercent
+  const panelSpeed = showStandbyPanel ? '0 B/s' : fileTransfer.speed
 
   return (
     <>
@@ -62,31 +70,34 @@ export default function TransferDrawer({
           </div>
 
           <div className="mt-4 grid gap-4">
-            {fileTransfer.panelVisible ? (
-              <div className="transfer-panel rounded-lg border border-amber-900/60 px-3 py-3" data-state={fileTransfer.panelState}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="transfer-title text-sm text-amber-200 truncate">{fileTransfer.title}</div>
-                    <div className="transfer-meta text-xs text-amber-500 mt-1">{fileTransfer.meta}</div>
-                  </div>
-                  {fileTransfer.cancelVisible ? (
-                    <button type="button" className="btn-retro px-2 py-1 text-xs rounded" onClick={onCancel}>
-                      <span>CANCEL</span>
-                    </button>
-                  ) : null}
+            <div
+              className="transfer-panel rounded-lg border border-amber-900/60 px-3 py-3"
+              data-state={showStandbyPanel ? 'idle' : fileTransfer.panelState}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="transfer-title text-sm text-amber-200 truncate">{panelTitle}</div>
+                  <div className="transfer-meta text-xs text-amber-500 mt-1">{panelMeta}</div>
                 </div>
+                {!showStandbyPanel && fileTransfer.cancelVisible ? (
+                  <button type="button" className="btn-retro px-2 py-1 text-xs rounded" onClick={onCancel}>
+                    <span>CANCEL</span>
+                  </button>
+                ) : null}
+              </div>
 
-                <div className="mt-3">
-                  <div className="transfer-progress-track">
-                    <div className="transfer-progress-bar" style={{ width: `${fileTransfer.progressPercent}%` }} />
-                  </div>
-                  <div className="mt-2 flex items-center justify-between gap-3 text-xs text-amber-500">
-                    <span>{fileTransfer.status}</span>
-                    <span>{fileTransfer.progressPercent}%</span>
-                  </div>
-                  <div className="transfer-speed mt-1 text-xs text-amber-600">{fileTransfer.speed}</div>
+              <div className="mt-3">
+                <div className="transfer-progress-track">
+                  <div className="transfer-progress-bar" style={{ width: `${panelProgress}%` }} />
                 </div>
+                <div className="mt-2 flex items-center justify-between gap-3 text-xs text-amber-500">
+                  <span>{panelStatus}</span>
+                  <span>{panelProgress}%</span>
+                </div>
+                <div className="transfer-speed mt-1 text-xs text-amber-600">{panelSpeed}</div>
+              </div>
 
+              {!showStandbyPanel ? (
                 <div className="mt-3 flex gap-2">
                   {fileTransfer.primaryAction ? (
                     <button type="button" className="btn-retro px-3 py-2 text-xs rounded" onClick={onAccept}>
@@ -99,8 +110,8 @@ export default function TransferDrawer({
                     </button>
                   ) : null}
                 </div>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
 
             <div className="received-files-panel rounded-lg border border-amber-900/60 px-3 py-3 flex flex-col" hidden={!fileTransfer.receivedFiles.length}>
               <div className="flex items-center justify-between gap-3">
