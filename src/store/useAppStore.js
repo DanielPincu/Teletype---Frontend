@@ -51,6 +51,7 @@ export const useAppStore = create((set) => ({
   micEnabled: getStoredBool('micEnabled', true),
   camEnabled: getStoredBool('camEnabled', true),
   isSharing: false,
+  syncCode: null,
   statusText: 'Idle',
   statusColor: 'green',
   statusBlink: false,
@@ -87,6 +88,7 @@ export const useAppStore = create((set) => ({
   setMicEnabled: (micEnabled) => set({ micEnabled }),
   setCamEnabled: (camEnabled) => set({ camEnabled }),
   setSharing: (isSharing) => set({ isSharing }),
+  setSyncCode: (syncCode) => set({ syncCode }),
   setStatus: (statusText, statusColor, statusBlink = false) =>
     set({ statusText, statusColor, statusBlink }),
   setConnectionType: (connectionType) => set({ connectionType }),
@@ -96,6 +98,7 @@ export const useAppStore = create((set) => ({
       localStream: null,
       remoteStream: null,
       isSharing: false,
+      syncCode: null,
       statusText: 'Idle',
       statusColor: 'green',
       statusBlink: false,

@@ -9,6 +9,7 @@ let fileTransferChannel = null
 let cameraTrack = null
 let isScreenSharing = false
 let connectTimeoutId = null
+let rtcSessionId = 0
 
 let connectionMode = typeof window !== 'undefined' && window.localStorage.getItem('connectionMode') === 'relay' ? 'relay' : 'p2p'
 const P2P_CONNECT_TIMEOUT_MS = 8000
@@ -30,6 +31,36 @@ function getStoredState(key, defaultValue = true) {
 
 function setStoredState(key, value) {
   window.localStorage.setItem(key, value ? 'true' : 'false')
+}
+
+function extractFingerprintLines(description) {
+  const sdp = description?.sdp
+  if (!sdp) return []
+
+  return sdp
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.toLowerCase().startsWith('a=fingerprint:'))
+    .map((line) => line.toLowerCase())
+}
+
+async function generateSyncCode(fingerprints) {
+  const payload = fingerprints
+    .slice()
+    .sort()
+    .join('|')
+
+  const digest = await window.crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(payload),
+  )
+
+  const bytes = new Uint8Array(digest)
+  const value =
+    ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) >>> 0
+  const code = String(value % 1_000_000).padStart(6, '0')
+
+  return `${code.slice(0, 3)}-${code.slice(3)}`
 }
 
 function getIceConfig() {
@@ -67,14 +98,35 @@ export const rtcHandlers = {
   onConnectionFailed: null,
   onIceStateChange: null,
   onConnectionType: null,
+  onSyncCode: null,
   sendMessage: null,
   sendFileControl: null,
   sendFileChunk: null,
 }
 
+async function maybeEmitSyncCode(sessionId) {
+  if (!pc || sessionId !== rtcSessionId) return
+  if (pc.connectionState !== 'connected') return
+
+  const localFingerprints = extractFingerprintLines(pc.localDescription)
+  const remoteFingerprints = extractFingerprintLines(pc.remoteDescription)
+
+  if (!localFingerprints.length || !remoteFingerprints.length) return
+
+  try {
+    const code = await generateSyncCode([...localFingerprints, ...remoteFingerprints])
+    if (!pc || sessionId !== rtcSessionId) return
+    rtcHandlers.onSyncCode?.(code)
+  } catch (error) {
+    console.warn('Failed to generate sync code', error)
+  }
+}
+
 export async function startPeer(isInitiator, id) {
   if (pc) return
 
+  rtcSessionId += 1
+  const sessionId = rtcSessionId
   peerId = id
   pc = new RTCPeerConnection(getIceConfig())
 
@@ -90,6 +142,7 @@ export async function startPeer(isInitiator, id) {
 
     if (pc.connectionState === 'connected') {
       clearConnectTimeout()
+      void maybeEmitSyncCode(sessionId)
     }
 
     if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
@@ -238,6 +291,7 @@ export async function startPeer(isInitiator, id) {
   if (isInitiator) {
     const offer = await pc.createOffer()
     await pc.setLocalDescription(offer)
+    void maybeEmitSyncCode(sessionId)
     safeSend({ type: 'offer', target: peerId, sdp: offer })
   }
 }
@@ -341,6 +395,7 @@ export async function handleSignal(msg) {
   if (msg.type === 'offer') {
     await startPeer(false, msg.from)
     await pc.setRemoteDescription(msg.sdp)
+    void maybeEmitSyncCode(rtcSessionId)
 
     for (const candidate of pendingCandidates) {
       try {
@@ -351,11 +406,13 @@ export async function handleSignal(msg) {
 
     const answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
+    void maybeEmitSyncCode(rtcSessionId)
     safeSend({ type: 'answer', target: msg.from, sdp: answer })
   }
 
   if (msg.type === 'answer') {
     await pc.setRemoteDescription(msg.sdp)
+    void maybeEmitSyncCode(rtcSessionId)
 
     for (const candidate of pendingCandidates) {
       try {
@@ -483,11 +540,13 @@ export function resetPeer() {
   pendingCandidates = []
   cameraTrack = null
   isScreenSharing = false
+  rtcSessionId += 1
 
   rtcHandlers.sendMessage = null
   rtcHandlers.sendFileControl = null
   rtcHandlers.sendFileChunk = null
   rtcHandlers.onFileTransferReset?.()
+  rtcHandlers.onSyncCode?.(null)
 
   peerId = null
 }

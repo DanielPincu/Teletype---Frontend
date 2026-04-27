@@ -23,6 +23,7 @@ export default function App() {
   const micEnabled = useAppStore((state) => state.micEnabled)
   const camEnabled = useAppStore((state) => state.camEnabled)
   const isSharing = useAppStore((state) => state.isSharing)
+  const syncCode = useAppStore((state) => state.syncCode)
   const statusText = useAppStore((state) => state.statusText)
   const statusColor = useAppStore((state) => state.statusColor)
   const statusBlink = useAppStore((state) => state.statusBlink)
@@ -33,9 +34,9 @@ export default function App() {
   }, [])
 
   return (
-    <div className="max-w-7xl mx-auto pt-10">
+    <div className="max-w-7xl mx-auto pt-5">
       <div className="chassis p-4 md:px-8">
-        <Header connectionState={connectionState} />
+        <Header connectionState={connectionState} syncCode={syncCode} />
 
         <div className="bg-black/30 border border-amber-800/70 p-4 rounded-xl mb-4">
           <div className="grid md:grid-cols-2 gap-6 items-center">

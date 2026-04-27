@@ -76,6 +76,10 @@ export function useWebRTC() {
       store.getState().setSharing(false)
     }
 
+    rtcHandlers.onSyncCode = (code) => {
+      store.getState().setSyncCode(code)
+    }
+
     connectSocket({
       onMessage: async (message) => {
         const state = store.getState()
