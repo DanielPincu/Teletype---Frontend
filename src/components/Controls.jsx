@@ -38,9 +38,22 @@ export default function Controls({
   const isConnected = connectionState === 'connected'
   const isConnecting = connectionState === 'connecting'
   const connectLabel = isConnected ? 'Disconnect' : isConnecting ? 'Cancel' : 'Connect'
-  const isIdle = connectionState === 'idle'
+  const isBusy = statusText === 'CHANNEL BUSY'
+  const isIdle = connectionState === 'idle' && !statusBlink && !isBusy && statusText === 'Idle'
   const statusColorClass =
-    isIdle ? 'bg-yellow-400' : statusColor === 'red' ? 'bg-red-500' : statusColor === 'yellow' ? 'bg-yellow-400' : 'bg-green-500'
+    isBusy || statusColor === 'red'
+      ? 'bg-red-500'
+      : isIdle
+        ? 'bg-yellow-400'
+        : statusColor === 'yellow'
+          ? 'bg-yellow-400'
+          : 'bg-green-500'
+  const statusShadowClass =
+    isBusy || statusColor === 'red'
+      ? 'shadow-[0_0_8px_rgba(239,68,68,0.85)]'
+      : isIdle || statusColor === 'yellow'
+        ? 'shadow-[0_0_8px_rgba(250,204,21,0.85)]'
+        : 'shadow-[0_0_8px_rgba(34,197,94,0.8)]'
 
   return (
     <div className="flex items-start justify-end md:col-start-2">
@@ -76,7 +89,7 @@ export default function Controls({
           <div className="flex flex-col items-center gap-1">
             <span className="text-sm text-amber-200">{statusText}</span>
             <div
-              className={`w-32 h-5 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.8)] ${statusColorClass} ${
+              className={`w-32 h-5 rounded-full ${statusShadowClass} ${statusColorClass} ${
                 statusBlink ? 'status-indicator-blink' : ''
               }`}
               style={
