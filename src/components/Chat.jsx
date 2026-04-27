@@ -3,9 +3,18 @@ import React, { useEffect, useRef, useState } from 'react'
 export default function Chat({ messages, connected, onSendMessage }) {
   const [text, setText] = useState('')
   const feedRef = useRef(null)
+  const hasMountedRef = useRef(false)
 
   useEffect(() => {
-    feedRef.current?.lastElementChild?.scrollIntoView({ block: 'end' })
+    const feed = feedRef.current
+    if (!feed) return
+
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true
+      return
+    }
+
+    feed.scrollTop = feed.scrollHeight
   }, [messages])
 
   const handleSubmit = () => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { MaximizeIcon, MicIcon, MicOffIcon, RadioIcon, ScreenShareIcon, StopIcon, VideoIcon, VideoOffIcon } from './Icons.jsx'
+import { MaximizeIcon, MicIcon, MicOffIcon, RadioIcon, ScreenShareIcon, VideoIcon, VideoOffIcon } from './Icons.jsx'
 
 function VideoScreen({
   title,
@@ -94,8 +94,8 @@ export default function VideoPanel({
               disabled={!isConnected}
               className="btn-retro w-full px-2 py-2 text-xs rounded hidden sm:inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSharing ? <StopIcon /> : <ScreenShareIcon />}
-              <span>{isSharing ? 'SHARING' : 'SHARE'}</span>
+              {!isSharing ? <ScreenShareIcon /> : null}
+              <span>{isSharing ? 'STOP SHARING' : 'SHARE'}</span>
             </button>
             <button
               type="button"

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useAppStore } from '../store/useAppStore.js'
 import { connectSocket, disconnectSocket, safeSend } from '../services/network.js'
-import { getConnectionMode, handleSignal, resetPeer, rtcHandlers, setConnectionMode, toggleCam, toggleMic, toggleScreenShare } from '../services/rtc.js'
+import { getConnectionMode, getScreenShareState, handleSignal, resetPeer, rtcHandlers, setConnectionMode, toggleCam, toggleMic, toggleScreenShare } from '../services/rtc.js'
 import { createFileTransferManager } from '../services/fileTransfer.js'
 import { isSocketConnectionActive, requestConnection } from '../services/connection.js'
 import { sendRTTY } from '../utils/rtty.js'
@@ -204,8 +204,7 @@ export function useWebRTC() {
       toggleScreenShare: async () => {
         const ok = await toggleScreenShare()
         if (ok) {
-          const { isSharing, setSharing } = store.getState()
-          setSharing(!isSharing)
+          store.getState().setSharing(getScreenShareState())
         }
         return ok
       },

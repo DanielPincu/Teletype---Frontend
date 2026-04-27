@@ -11,7 +11,7 @@ export default function Header({ connectionState }) {
     <div className="mb-4 flex items-center justify-between gap-4 flex-wrap w-full relative">
       <div className="absolute left-1/2 -translate-x-1/2 text-center flex flex-col leading-tight">
         <div className="flex items-center justify-center gap-3">
-          <span className="text-lg md:text-6xl glow-text vt-font tracking-wider">RADIOTELETYPE</span>
+          <span className="text-lg hidden md:block md:text-6xl glow-text vt-font tracking-wider">RADIOTELETYPE</span>
         </div>
       </div>
 

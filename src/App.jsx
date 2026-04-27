@@ -41,7 +41,7 @@ export default function App() {
           <div className="grid md:grid-cols-2 gap-6 items-center">
             <div className="flex items-center md:col-start-1 h-full">
               <Dial value={dialValue} disabled={isLocked} joinError={joinError} onChangeDigit={actions.updateDialDigit} />
-              <div className="flex items-center gap-2 text-xs font-mono text-green-300 bg-black/40 border-t border-r border-b border-green-700/60 px-3 py-1 rounded-r shadow-[inset_0_0_8px_rgba(0,255,100,0.2)]">
+              <div className="hidden md:flex items-center gap-2 text-xs font-mono text-green-300 bg-black/40 border-t border-r border-b border-green-700/60 px-3 py-1 rounded-r shadow-[inset_0_0_8px_rgba(0,255,100,0.2)]">
                 <span className="text-green-400">PRIVATE CHANNEL SELECTOR</span>
               </div>
             </div>

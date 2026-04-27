@@ -400,6 +400,10 @@ export function toggleCam() {
   return track.enabled
 }
 
+export function getScreenShareState() {
+  return isScreenSharing
+}
+
 export async function toggleScreenShare() {
   if (!pc) return false
 
