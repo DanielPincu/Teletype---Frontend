@@ -38,8 +38,9 @@ export default function Controls({
   const isConnected = connectionState === 'connected'
   const isConnecting = connectionState === 'connecting'
   const connectLabel = isConnected ? 'Disconnect' : isConnecting ? 'Cancel' : 'Connect'
+  const isIdle = connectionState === 'idle'
   const statusColorClass =
-    statusColor === 'red' ? 'bg-red-500' : statusColor === 'yellow' ? 'bg-yellow-400' : 'bg-green-500'
+    isIdle ? 'bg-yellow-400' : statusColor === 'red' ? 'bg-red-500' : statusColor === 'yellow' ? 'bg-yellow-400' : 'bg-green-500'
 
   return (
     <div className="flex items-start justify-end md:col-start-2">

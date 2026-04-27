@@ -33,9 +33,9 @@ export default function Header({ connectionState, syncCode }) {
           <Led active={syncActive} signal={!syncActive} />
         </div>
         </div>
-        <div className="hidden md:flex min-h-[5rem] flex-col border-t border-amber-900/70 pt-2 text-[10px] tracking-[0.18em] text-amber-600 uppercase">
+        <div className="flex min-h-[3.5rem] flex-col border-t border-amber-900/70 pt-2 text-[10px] tracking-[0.18em] text-amber-600 uppercase md:min-h-[5rem]">
           <span
-            className="relative inline-flex text-3xl text-amber-300 vt-font tracking-[0.24em] leading-none"
+            className="relative inline-flex text-lg text-amber-300 vt-font tracking-[0.2em] leading-none md:text-3xl md:tracking-[0.24em]"
             style={{ fontVariantNumeric: 'tabular-nums' }}
           >
             <span className="opacity-0 select-none">--- ---</span>
@@ -43,12 +43,12 @@ export default function Header({ connectionState, syncCode }) {
           </span>
           {syncCode ? (
             <span
-              className="mt-1 text-lg text-amber-700 tracking-[0.16em] status-indicator-blink"
+              className="mt-1 text-[10px] text-amber-700 tracking-[0.12em] status-indicator-blink md:text-lg md:tracking-[0.16em]"
               style={{ animationDuration: '2s' }}
             >
               Confirm the code with your peer
             </span>
-          ) : <span className="mt-1 text-[9px] opacity-0 select-none">Confirm the code with your peer</span>}
+          ) : <span className="mt-1 text-[9px] opacity-0 select-none md:text-lg">Confirm the code with your peer</span>}
         </div>
       </div>
     </div>

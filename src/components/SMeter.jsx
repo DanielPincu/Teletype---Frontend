@@ -1,29 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 
-const ledClasses = [
-  'border-yellow-950',
-  'border-yellow-950',
-  'border-yellow-950',
-  'border-yellow-950',
-  'border-green-950',
-  'border-green-950',
-  'border-green-950',
-  'border-green-950',
-  'border-green-950',
-  'border-green-950',
-  'border-green-950',
-  'border-green-950',
-  'border-red-950',
-  'border-red-950',
-  'border-red-950',
-  'border-red-950',
-  'border-red-950',
-  'border-red-950',
-  'border-yellow-950',
-  'border-yellow-950',
-  'border-yellow-950',
-  'border-yellow-950',
-]
+const ledClasses = Array.from({ length: 22 }, () => 'border-amber-950')
 
 const LEVEL_ATTACK = 0.32
 const LEVEL_RELEASE = 0.12
@@ -193,8 +170,12 @@ export default function SMeter({ micEnabled }) {
                   key={`${row}-${index}`}
                   className={`s-led h-2 flex-1 rounded-full border ${borderClass}`}
                   style={{
-                    background: active ? color : 'transparent',
-                    boxShadow: active ? `0 0 6px ${color}` : '',
+                    background: active
+                      ? `linear-gradient(180deg, ${color}, ${color})`
+                      : 'linear-gradient(180deg, rgba(29, 18, 6, 0.96), rgba(7, 4, 1, 0.98))',
+                    boxShadow: active
+                      ? `0 0 6px ${color}, inset 0 0 4px rgba(255,255,255,0.12)`
+                      : 'inset 0 0 5px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255,255,255,0.04)',
                   }}
                 />
               )
