@@ -1,4 +1,5 @@
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+const AudioContextCtor = typeof window !== 'undefined' ? window.AudioContext || window.webkitAudioContext : null
+const audioCtx = AudioContextCtor ? new AudioContextCtor() : null
 
 let rttyOsc = null
 let rttyGain = null
@@ -11,23 +12,23 @@ function startRTTY() {
 
   rttyOsc.type = 'sine'
   rttyOsc.frequency.value = 2125
-
   rttyGain.gain.value = 0.03
 
   rttyOsc.connect(rttyGain)
   rttyGain.connect(audioCtx.destination)
-
   rttyOsc.start()
 }
 
 function stopRTTY(delay = 0.1) {
-  if (!rttyOsc) return
+  if (!rttyOsc || !rttyGain || !audioCtx) return
 
   const now = audioCtx.currentTime
   rttyGain.gain.setTargetAtTime(0.0001, now, delay)
 
-  setTimeout(() => {
-    try { rttyOsc.stop() } catch {}
+  window.setTimeout(() => {
+    try {
+      rttyOsc.stop()
+    } catch {}
     rttyOsc.disconnect()
     rttyGain.disconnect()
     rttyOsc = null
@@ -40,7 +41,6 @@ export function sendRTTY(text = '') {
 
   const baud = 45.45
   const bitDuration = 1 / baud
-
   const MARK = 2125
   const SPACE = 2295
 
@@ -48,15 +48,15 @@ export function sendRTTY(text = '') {
 
   let t = audioCtx.currentTime
 
-  function shift(freq, time) {
-    rttyOsc.frequency.setValueAtTime(freq, time)
+  const shift = (freq, time) => {
+    rttyOsc?.frequency.setValueAtTime(freq, time)
   }
 
   text.toUpperCase().split('').forEach(() => {
     shift(SPACE, t)
     t += bitDuration
 
-    for (let i = 0; i < 5; i++) {
+    for (let index = 0; index < 5; index += 1) {
       shift(Math.random() > 0.5 ? MARK : SPACE, t)
       t += bitDuration
     }
@@ -65,5 +65,5 @@ export function sendRTTY(text = '') {
     t += bitDuration * 1.5
   })
 
-  stopRTTY((t - audioCtx.currentTime) + 0.05)
+  stopRTTY(t - audioCtx.currentTime + 0.05)
 }

@@ -10,12 +10,12 @@ let cameraTrack = null
 let isScreenSharing = false
 let connectTimeoutId = null
 
-let connectionMode = localStorage.getItem('connectionMode') || 'p2p' // 'p2p' or 'relay'
+let connectionMode = typeof window !== 'undefined' && window.localStorage.getItem('connectionMode') === 'relay' ? 'relay' : 'p2p'
 const P2P_CONNECT_TIMEOUT_MS = 8000
 
 export function setConnectionMode(mode) {
   connectionMode = mode === 'relay' ? 'relay' : 'p2p'
-  localStorage.setItem('connectionMode', connectionMode)
+  window.localStorage.setItem('connectionMode', connectionMode)
 }
 
 export function getConnectionMode() {
@@ -23,36 +23,32 @@ export function getConnectionMode() {
 }
 
 function getStoredState(key, defaultValue = true) {
-  const val = localStorage.getItem(key)
-  if (val === null) return defaultValue
-  return val === 'true'
+  const value = window.localStorage.getItem(key)
+  if (value === null) return defaultValue
+  return value === 'true'
 }
 
 function setStoredState(key, value) {
-  localStorage.setItem(key, value ? 'true' : 'false')
+  window.localStorage.setItem(key, value ? 'true' : 'false')
 }
 
-// strict modes. Either this or that. Punktum.
 function getIceConfig() {
   if (connectionMode === 'relay') {
     return {
       iceServers: [
         {
-          urls: ["turns:turn.radioteletype.net:5349?transport=tcp"],
-          username: "teletype",
-          credential: "StrongPassword123"
-        }
+          urls: ['turns:turn.radioteletype.net:5349?transport=tcp'],
+          username: 'teletype',
+          credential: 'StrongPassword123',
+        },
       ],
-      iceTransportPolicy: 'relay'
+      iceTransportPolicy: 'relay',
     }
   }
 
-  // P2P ONLY (no TURN fallback)
   return {
-    iceServers: [
-      { urls: "stun:stun.l.google.com:19302" }
-    ],
-    iceTransportPolicy: 'all'
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+    iceTransportPolicy: 'all',
   }
 }
 
@@ -84,7 +80,7 @@ export async function startPeer(isInitiator, id) {
 
   const clearConnectTimeout = () => {
     if (connectTimeoutId) {
-      clearTimeout(connectTimeoutId)
+      window.clearTimeout(connectTimeoutId)
       connectTimeoutId = null
     }
   }
@@ -126,10 +122,9 @@ export async function startPeer(isInitiator, id) {
 
     try {
       const stats = await pc.getStats()
-
       let selectedPair = null
 
-      stats.forEach(report => {
+      stats.forEach((report) => {
         if (report.type === 'transport' && report.selectedCandidatePairId) {
           selectedPair = stats.get(report.selectedCandidatePairId)
         }
@@ -139,42 +134,33 @@ export async function startPeer(isInitiator, id) {
 
       const local = stats.get(selectedPair.localCandidateId)
       const remote = stats.get(selectedPair.remoteCandidateId)
-
       const localType = local?.candidateType
       const remoteType = remote?.candidateType
 
       let finalType = 'HYBRID'
 
-      // FULL RELAY
       if (localType === 'relay' && remoteType === 'relay') {
         finalType = 'relay'
-      }
-      // HYBRID (one relay, one not)
-      else if (
+      } else if (
         (localType === 'relay' && (remoteType === 'srflx' || remoteType === 'host')) ||
         (remoteType === 'relay' && (localType === 'srflx' || localType === 'host'))
       ) {
         finalType = 'hybrid'
-      }
-      // PURE STUN
-      else if (localType === 'srflx' || remoteType === 'srflx') {
+      } else if (localType === 'srflx' || remoteType === 'srflx') {
         finalType = 'srflx'
-      }
-      // PURE LOCAL
-      else if (localType === 'host' && remoteType === 'host') {
+      } else if (localType === 'host' && remoteType === 'host') {
         finalType = 'host'
       }
 
       rtcHandlers.onConnectionType?.(finalType)
-    } catch (e) {
-      console.warn('getStats failed', e)
+    } catch (error) {
+      console.warn('getStats failed', error)
     }
   }
 
-  // run detection after connection established
   pc.addEventListener('connectionstatechange', () => {
-    if (pc.connectionState === 'connected') {
-      setTimeout(detectConnectionType, 500)
+    if (pc?.connectionState === 'connected') {
+      window.setTimeout(detectConnectionType, 500)
     }
   })
 
@@ -185,15 +171,15 @@ export async function startPeer(isInitiator, id) {
     fileTransferChannel = pc.createDataChannel('file-transfer', { ordered: true })
     setupFileTransferChannel(fileTransferChannel)
   } else {
-    pc.ondatachannel = (e) => {
-      if (e.channel.label === 'chat') {
-        chatChannel = e.channel
+    pc.ondatachannel = (event) => {
+      if (event.channel.label === 'chat') {
+        chatChannel = event.channel
         setupChatChannel(chatChannel)
         return
       }
 
-      if (e.channel.label === 'file-transfer') {
-        fileTransferChannel = e.channel
+      if (event.channel.label === 'file-transfer') {
+        fileTransferChannel = event.channel
         setupFileTransferChannel(fileTransferChannel)
       }
     }
@@ -203,48 +189,45 @@ export async function startPeer(isInitiator, id) {
 
   const micEnabled = getStoredState('micEnabled', true)
   const camEnabled = getStoredState('camEnabled', true)
-
   const audioTrack = localStream.getAudioTracks()[0]
-  if (audioTrack) audioTrack.enabled = micEnabled
-
   const videoTrack = localStream.getVideoTracks()[0]
+
+  if (audioTrack) audioTrack.enabled = micEnabled
   if (videoTrack) videoTrack.enabled = camEnabled
 
   rtcHandlers.onLocalStream?.(localStream)
-
   cameraTrack = localStream.getVideoTracks()[0]
 
-  localStream.getTracks().forEach(track => {
+  localStream.getTracks().forEach((track) => {
     pc.addTrack(track, localStream)
   })
 
   pc.ontrack = (event) => {
     let stream = pc.remoteStream
+
     if (!stream) {
       stream = new MediaStream()
       pc.remoteStream = stream
       rtcHandlers.onRemoteStream?.(stream)
     }
+
     stream.addTrack(event.track)
   }
 
-  pc.onicecandidate = (e) => {
-    if (e.candidate) {
-      safeSend({ type: "ice-candidate", target: peerId, candidate: e.candidate })
+  pc.onicecandidate = (event) => {
+    if (event.candidate) {
+      safeSend({ type: 'ice-candidate', target: peerId, candidate: event.candidate })
     }
   }
 
   if (connectionMode === 'p2p') {
-    connectTimeoutId = setTimeout(() => {
+    connectTimeoutId = window.setTimeout(() => {
       if (!pc) return
 
       const iceState = pc.iceConnectionState
       const connState = pc.connectionState
 
-      if (
-        !['connected', 'completed'].includes(iceState) &&
-        connState !== 'connected'
-      ) {
+      if (!['connected', 'completed'].includes(iceState) && connState !== 'connected') {
         resetPeer()
         rtcHandlers.onConnectionFailed?.('timeout')
         rtcHandlers.onDisconnected?.()
@@ -255,7 +238,7 @@ export async function startPeer(isInitiator, id) {
   if (isInitiator) {
     const offer = await pc.createOffer()
     await pc.setLocalDescription(offer)
-    safeSend({ type: "offer", target: peerId, sdp: offer })
+    safeSend({ type: 'offer', target: peerId, sdp: offer })
   }
 }
 
@@ -265,8 +248,8 @@ function setupChatChannel(channel) {
     rtcHandlers.sendMessage = sendMessage
   }
 
-  channel.onmessage = (e) => {
-    rtcHandlers.onMessage?.(e.data)
+  channel.onmessage = (event) => {
+    rtcHandlers.onMessage?.(event.data)
   }
 }
 
@@ -286,10 +269,10 @@ function setupFileTransferChannel(channel) {
     rtcHandlers.onFileChannelClosed?.()
   }
 
-  channel.onmessage = (e) => {
-    if (typeof e.data === 'string') {
+  channel.onmessage = (event) => {
+    if (typeof event.data === 'string') {
       try {
-        const payload = JSON.parse(e.data)
+        const payload = JSON.parse(event.data)
         rtcHandlers.onFileControlMessage?.(payload)
       } catch (error) {
         console.warn('Invalid file control message', error)
@@ -297,13 +280,14 @@ function setupFileTransferChannel(channel) {
       return
     }
 
-    if (e.data instanceof ArrayBuffer) {
-      rtcHandlers.onFileData?.(e.data)
+    if (event.data instanceof ArrayBuffer) {
+      rtcHandlers.onFileData?.(event.data)
       return
     }
 
-    if (e.data?.arrayBuffer) {
-      e.data.arrayBuffer()
+    if (event.data?.arrayBuffer) {
+      event.data
+        .arrayBuffer()
         .then((buffer) => rtcHandlers.onFileData?.(buffer))
         .catch((error) => console.warn('Failed to read file chunk', error))
     }
@@ -348,40 +332,45 @@ export function sendFileChunk(chunk) {
 }
 
 export async function handleSignal(msg) {
-  if (msg.type === "peer-found") {
+  if (msg.type === 'peer-found') {
     if (!pc && msg.initiator) {
       await startPeer(true, msg.peerId)
     }
   }
 
-  if (msg.type === "offer") {
+  if (msg.type === 'offer') {
     await startPeer(false, msg.from)
     await pc.setRemoteDescription(msg.sdp)
 
-    for (const c of pendingCandidates) {
-      try { await pc.addIceCandidate(c) } catch {}
+    for (const candidate of pendingCandidates) {
+      try {
+        await pc.addIceCandidate(candidate)
+      } catch {}
     }
     pendingCandidates = []
 
     const answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
-
-    safeSend({ type: "answer", target: msg.from, sdp: answer })
+    safeSend({ type: 'answer', target: msg.from, sdp: answer })
   }
 
-  if (msg.type === "answer") {
+  if (msg.type === 'answer') {
     await pc.setRemoteDescription(msg.sdp)
 
-    for (const c of pendingCandidates) {
-      try { await pc.addIceCandidate(c) } catch {}
+    for (const candidate of pendingCandidates) {
+      try {
+        await pc.addIceCandidate(candidate)
+      } catch {}
     }
     pendingCandidates = []
   }
 
-  if (msg.type === "ice-candidate") {
+  if (msg.type === 'ice-candidate') {
     if (pc && msg.candidate) {
       if (pc.remoteDescription) {
-        try { await pc.addIceCandidate(msg.candidate) } catch {}
+        try {
+          await pc.addIceCandidate(msg.candidate)
+        } catch {}
       } else {
         pendingCandidates.push(msg.candidate)
       }
@@ -390,26 +379,24 @@ export async function handleSignal(msg) {
 }
 
 export function toggleMic() {
-  if (!localStream) return false
+  if (!localStream) return null
 
   const track = localStream.getAudioTracks()[0]
-  if (!track) return false
+  if (!track) return null
 
   track.enabled = !track.enabled
   setStoredState('micEnabled', track.enabled)
-
   return track.enabled
 }
 
 export function toggleCam() {
-  if (!localStream) return false
+  if (!localStream) return null
 
   const track = localStream.getVideoTracks()[0]
-  if (!track) return false
+  if (!track) return null
 
   track.enabled = !track.enabled
   setStoredState('camEnabled', track.enabled)
-
   return track.enabled
 }
 
@@ -417,7 +404,7 @@ export async function toggleScreenShare() {
   if (!pc) return false
 
   try {
-    const sender = pc.getSenders().find(s => s.track?.kind === 'video')
+    const sender = pc.getSenders().find((entry) => entry.track?.kind === 'video')
 
     if (isScreenSharing) {
       const camTrack = cameraTrack || localStream?.getVideoTracks()[0]
@@ -436,7 +423,6 @@ export async function toggleScreenShare() {
     const screenTrack = screenStream.getVideoTracks()[0]
 
     if (sender) sender.replaceTrack(screenTrack)
-
     rtcHandlers.onLocalStream?.(screenStream)
 
     screenTrack.onended = () => {
@@ -460,32 +446,39 @@ export async function toggleScreenShare() {
 
 export function resetPeer() {
   if (connectTimeoutId) {
-    clearTimeout(connectTimeoutId)
+    window.clearTimeout(connectTimeoutId)
     connectTimeoutId = null
   }
 
   if (chatChannel) {
-    try { chatChannel.close() } catch {}
+    try {
+      chatChannel.close()
+    } catch {}
     chatChannel = null
   }
 
   if (fileTransferChannel) {
-    try { fileTransferChannel.close() } catch {}
+    try {
+      fileTransferChannel.close()
+    } catch {}
     fileTransferChannel = null
   }
 
   if (pc) {
-    try { pc.close() } catch {}
+    try {
+      pc.close()
+    } catch {}
     pc = null
   }
 
   if (localStream) {
-    localStream.getTracks().forEach(t => t.stop())
+    localStream.getTracks().forEach((track) => track.stop())
     localStream = null
   }
 
   pendingCandidates = []
   cameraTrack = null
+  isScreenSharing = false
 
   rtcHandlers.sendMessage = null
   rtcHandlers.sendFileControl = null
@@ -495,6 +488,8 @@ export function resetPeer() {
   peerId = null
 }
 
-window.addEventListener('beforeunload', () => {
-  resetPeer()
-})
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    resetPeer()
+  })
+}
