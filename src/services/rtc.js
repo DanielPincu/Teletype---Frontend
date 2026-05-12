@@ -65,12 +65,24 @@ async function generateSyncCode(fingerprints) {
 
 function getIceConfig() {
   if (connectionMode === 'relay') {
+    const username = import.meta.env.VITE_TURN_USERNAME
+    const credential = import.meta.env.VITE_TURN_PASSWORD
+
+    if (!username || !credential) {
+      console.warn('TURN relay mode is missing VITE_TURN_USERNAME or VITE_TURN_PASSWORD')
+
+      return {
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+        iceTransportPolicy: 'all',
+      }
+    }
+
     return {
       iceServers: [
         {
           urls: ['turns:turn.radioteletype.net:5349?transport=tcp'],
-          username: 'teletype',
-          credential: 'StrongPassword123',
+          username,
+          credential,
         },
       ],
       iceTransportPolicy: 'relay',
