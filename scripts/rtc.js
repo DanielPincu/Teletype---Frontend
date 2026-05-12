@@ -12,6 +12,12 @@ let connectTimeoutId = null
 
 let connectionMode = localStorage.getItem('connectionMode') || 'p2p' // 'p2p' or 'relay'
 const P2P_CONNECT_TIMEOUT_MS = 8000
+const env = import.meta.env || {}
+
+const TURN_URL = 'turns:turn.radioteletype.net:5349?transport=tcp'
+const TURN_USERNAME = env.VITE_TURN_USERNAME
+const TURN_PASSWORD = env.VITE_TURN_PASSWORD
+const STUN_URL = 'stun:stun.l.google.com:19302'
 
 export function setConnectionMode(mode) {
   connectionMode = mode === 'relay' ? 'relay' : 'p2p'
@@ -35,12 +41,16 @@ function setStoredState(key, value) {
 // strict modes. Either this or that. Punktum.
 function getIceConfig() {
   if (connectionMode === 'relay') {
+    if (!TURN_USERNAME || !TURN_PASSWORD) {
+      throw new Error('Missing TURN credentials. Set VITE_TURN_USERNAME and VITE_TURN_PASSWORD in .env')
+    }
+
     return {
       iceServers: [
         {
-          urls: ["turns:turn.radioteletype.net:5349?transport=tcp"],
-          username: "teletype",
-          credential: "StrongPassword123"
+          urls: [TURN_URL],
+          username: TURN_USERNAME,
+          credential: TURN_PASSWORD
         }
       ],
       iceTransportPolicy: 'relay'
@@ -50,7 +60,7 @@ function getIceConfig() {
   // P2P ONLY (no TURN fallback)
   return {
     iceServers: [
-      { urls: "stun:stun.l.google.com:19302" }
+      { urls: STUN_URL }
     ],
     iceTransportPolicy: 'all'
   }
