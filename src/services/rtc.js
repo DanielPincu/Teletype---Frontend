@@ -10,6 +10,7 @@ let cameraTrack = null
 let isScreenSharing = false
 let connectTimeoutId = null
 let rtcSessionId = 0
+let reconnectAttempts = 0
 
 let connectionMode = typeof window !== 'undefined' && window.localStorage.getItem('connectionMode') === 'relay' ? 'relay' : 'p2p'
 const P2P_CONNECT_TIMEOUT_MS = 8000
@@ -95,6 +96,15 @@ function getIceConfig() {
   }
 }
 
+function getCandidatePathLabel(localType, remoteType) {
+  if (!localType && !remoteType) return 'SCANNING'
+  if (localType === 'relay' && remoteType === 'relay') return 'RELAY'
+  if (localType === 'relay' || remoteType === 'relay') return 'HYBRID'
+  if (localType === 'srflx' || remoteType === 'srflx') return 'STUN'
+  if (localType === 'host' && remoteType === 'host') return 'LOCAL'
+  return `${localType || 'unknown'} / ${remoteType || 'unknown'}`.toUpperCase()
+}
+
 export const rtcHandlers = {
   onLocalStream: null,
   onRemoteStream: null,
@@ -114,6 +124,76 @@ export const rtcHandlers = {
   sendMessage: null,
   sendFileControl: null,
   sendFileChunk: null,
+}
+
+export function getReconnectAttempts() {
+  return reconnectAttempts
+}
+
+export async function getConnectionDiagnostics() {
+  const base = {
+    updatedAt: Date.now(),
+    connected: Boolean(pc && pc.connectionState === 'connected'),
+    connectionState: pc?.connectionState || 'idle',
+    iceState: pc?.iceConnectionState || 'new',
+    signalingState: pc?.signalingState || 'stable',
+    connectionMode,
+    pathLabel: 'OFFLINE',
+    localCandidateType: null,
+    remoteCandidateType: null,
+    latencyMs: null,
+    packetsLost: 0,
+    packetsReceived: 0,
+    bytesSent: 0,
+    bytesReceived: 0,
+    codec: 'N/A',
+    reconnectAttempts,
+  }
+
+  if (!pc) return base
+
+  try {
+    const stats = await pc.getStats()
+    let selectedPair = null
+    const codecs = new Set()
+
+    stats.forEach((report) => {
+      if (report.type === 'transport' && report.selectedCandidatePairId) {
+        selectedPair = stats.get(report.selectedCandidatePairId)
+      }
+
+      if ((report.type === 'inbound-rtp' || report.type === 'outbound-rtp') && !report.isRemote) {
+        base.bytesSent += Number(report.bytesSent) || 0
+        base.bytesReceived += Number(report.bytesReceived) || 0
+        base.packetsLost += Number(report.packetsLost) || 0
+        base.packetsReceived += Number(report.packetsReceived) || 0
+
+        const codec = report.codecId ? stats.get(report.codecId) : null
+        if (codec?.mimeType) {
+          codecs.add(codec.mimeType.replace(/^audio\//, '').replace(/^video\//, '').toUpperCase())
+        }
+      }
+    })
+
+    if (selectedPair) {
+      const local = stats.get(selectedPair.localCandidateId)
+      const remote = stats.get(selectedPair.remoteCandidateId)
+      base.localCandidateType = local?.candidateType || null
+      base.remoteCandidateType = remote?.candidateType || null
+      base.pathLabel = getCandidatePathLabel(base.localCandidateType, base.remoteCandidateType)
+      base.latencyMs = Number.isFinite(selectedPair.currentRoundTripTime)
+        ? Math.round(selectedPair.currentRoundTripTime * 1000)
+        : null
+    } else if (pc.connectionState === 'connected') {
+      base.pathLabel = 'CONNECTED'
+    }
+
+    base.codec = codecs.size ? Array.from(codecs).join(' / ') : 'N/A'
+  } catch (error) {
+    console.warn('Diagnostics stats failed', error)
+  }
+
+  return base
 }
 
 async function maybeEmitSyncCode(sessionId) {
@@ -176,6 +256,7 @@ export async function startPeer(isInitiator, id) {
 
     if (['failed', 'disconnected', 'closed'].includes(pc.iceConnectionState)) {
       clearConnectTimeout()
+      if (pc.iceConnectionState !== 'closed') reconnectAttempts += 1
       resetPeer()
       rtcHandlers.onConnectionFailed?.(pc.iceConnectionState)
       rtcHandlers.onDisconnected?.()
@@ -293,6 +374,7 @@ export async function startPeer(isInitiator, id) {
       const connState = pc.connectionState
 
       if (!['connected', 'completed'].includes(iceState) && connState !== 'connected') {
+        reconnectAttempts += 1
         resetPeer()
         rtcHandlers.onConnectionFailed?.('timeout')
         rtcHandlers.onDisconnected?.()

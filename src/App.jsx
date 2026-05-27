@@ -6,6 +6,7 @@ import VideoPanel from './components/VideoPanel.jsx'
 import Chat from './components/Chat.jsx'
 import SMeter from './components/SMeter.jsx'
 import TransferDrawer from './components/TransferDrawer.jsx'
+import DiagnosticsDrawer from './components/DiagnosticsDrawer.jsx'
 import { useWebRTC } from './hooks/useWebRTC.js'
 import { useAppStore } from './store/useAppStore.js'
 
@@ -16,6 +17,7 @@ export default function App() {
   const remoteStream = useAppStore((state) => state.remoteStream)
   const messages = useAppStore((state) => state.messages)
   const fileTransfer = useAppStore((state) => state.fileTransfer)
+  const diagnostics = useAppStore((state) => state.diagnostics)
   const dialValue = useAppStore((state) => state.dialValue)
   const transportMode = useAppStore((state) => state.transportMode)
   const isLocked = useAppStore((state) => state.isLocked)
@@ -89,6 +91,10 @@ export default function App() {
         onDownloadFile={actions.downloadReceivedFile}
         onRemoveFile={actions.removeReceivedFile}
         onToggleDrawer={() => actions.setDrawerCollapsed(!fileTransfer.drawerCollapsed)}
+      />
+      <DiagnosticsDrawer
+        diagnostics={diagnostics}
+        onToggleDrawer={() => actions.setDiagnosticsDrawerCollapsed(!diagnostics.drawerCollapsed)}
       />
     </div>
   )

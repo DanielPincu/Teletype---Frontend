@@ -293,9 +293,55 @@ body::before {
   padding: 0;
 }
 
+.diagnostics-drawer {
+  position: fixed;
+  top: 1rem;
+  bottom: 1rem;
+  left: 0;
+  z-index: 31;
+  width: min(27rem, calc(100vw - 1rem));
+  height: calc(100vh - 2rem);
+  max-height: calc(100vh - 2rem);
+  transform: translateX(0);
+  transition: transform 0.28s ease;
+  pointer-events: none;
+}
+
+.diagnostics-drawer[data-collapsed='true'] {
+  transform: translateX(-100%);
+}
+
+.diagnostics-drawer-toggle {
+  position: absolute;
+  top: 50%;
+  right: -2.8rem;
+  width: 2.8rem;
+  height: 10rem;
+  transform: translateY(-50%);
+  border: 1px solid rgba(245, 158, 11, 0.55);
+  border-left: none;
+  border-radius: 0 14px 14px 0;
+  background: linear-gradient(180deg, rgba(16, 58, 41, 0.96), rgba(3, 15, 11, 0.98));
+  color: #fde68a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    10px 14px 24px rgba(0, 0, 0, 0.22);
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
 .transfer-drawer-toggle-text {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+}
+
+.diagnostics-drawer-toggle-text {
+  writing-mode: vertical-rl;
   letter-spacing: 0.18em;
   font-size: 0.72rem;
 }
@@ -312,9 +358,100 @@ body::before {
   pointer-events: auto;
 }
 
+.diagnostics-station {
+  position: relative;
+  height: 100%;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  background: #06110d;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 14px 34px rgba(0, 0, 0, 0.24);
+  pointer-events: auto;
+}
+
 .transfer-panel {
   background: #241003;
   box-shadow: inset 0 0 10px rgba(245, 158, 11, 0.04);
+}
+
+.diagnostics-panel {
+  background: #071a12;
+  box-shadow: inset 0 0 12px rgba(34, 197, 94, 0.04);
+}
+
+.diagnostics-tile {
+  min-width: 0;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.32);
+  padding: 0.65rem 0.7rem;
+}
+
+.diagnostics-label {
+  display: block;
+  color: rgba(251, 191, 36, 0.62);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.diagnostics-value {
+  display: block;
+  margin-top: 0.25rem;
+  color: #fde68a;
+  font-size: 0.98rem;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.diagnostics-value-green {
+  color: #86efac;
+}
+
+.diagnostics-value-red {
+  color: #fca5a5;
+}
+
+.diagnostics-value-amber {
+  color: #fde68a;
+}
+
+.diagnostics-path {
+  color: #86efac;
+  font-size: 2rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+}
+
+.diagnostics-badge {
+  border: 1px solid rgba(34, 197, 94, 0.32);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.34);
+  color: #bbf7d0;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  padding: 0.35rem 0.55rem;
+}
+
+.diagnostics-link-light {
+  width: 2.4rem;
+  height: 2.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 999px;
+  color: rgba(252, 211, 77, 0.5);
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.75);
+}
+
+.diagnostics-link-light.active {
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.58);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.35), inset 0 0 10px rgba(34, 197, 94, 0.08);
 }
 
 .transfer-title,
@@ -337,6 +474,28 @@ body::before {
   background: linear-gradient(90deg, #854d0e, #f59e0b, #fde68a);
   box-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
   transition: width 0.18s ease;
+}
+
+.diagnostics-progress-track {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(34, 197, 94, 0.24);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.diagnostics-progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #166534, #22c55e, #fef08a);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.28);
+  transition: width 0.18s ease;
+}
+
+.diagnostics-progress-bar.alt {
+  background: linear-gradient(90deg, #854d0e, #f59e0b, #fde68a);
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.24);
 }
 
 .received-file-item {
@@ -469,6 +628,7 @@ textarea:focus {
 }
 
 @media (max-width: 767px) {
+  .diagnostics-drawer,
   .transfer-drawer {
     top: auto;
     bottom: 1rem;
@@ -476,6 +636,7 @@ textarea:focus {
     max-height: min(70vh, 32rem);
   }
 
+  .diagnostics-station,
   .transfer-station {
     max-height: min(70vh, 32rem);
   }

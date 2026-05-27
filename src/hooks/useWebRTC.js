@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useAppStore } from '../store/useAppStore.js'
 import { connectSocket, disconnectSocket, safeSend } from '../services/network.js'
-import { getConnectionMode, getScreenShareState, handleSignal, resetPeer, rtcHandlers, setConnectionMode, toggleCam, toggleMic, toggleScreenShare } from '../services/rtc.js'
+import { getConnectionDiagnostics, getConnectionMode, getScreenShareState, handleSignal, resetPeer, rtcHandlers, setConnectionMode, toggleCam, toggleMic, toggleScreenShare } from '../services/rtc.js'
 import { createFileTransferManager } from '../services/fileTransfer.js'
 import { isSocketConnectionActive, requestConnection } from '../services/connection.js'
 import { sendRTTY } from '../utils/rtty.js'
@@ -17,6 +17,7 @@ const formatConnectionStatus = (type) => {
 export function useWebRTC() {
   const store = useAppStore
   const fileTransferManagerRef = useRef(null)
+  const diagnosticsPreviousRef = useRef(null)
 
   useEffect(() => {
     fileTransferManagerRef.current = createFileTransferManager({
@@ -126,6 +127,61 @@ export function useWebRTC() {
     }
   }, [store])
 
+  useEffect(() => {
+    let cancelled = false
+
+    const pollDiagnostics = async () => {
+      const snapshot = await getConnectionDiagnostics()
+      if (cancelled) return
+
+      const previous = diagnosticsPreviousRef.current
+      const elapsedSeconds = previous
+        ? Math.max((snapshot.updatedAt - previous.updatedAt) / 1000, 0.1)
+        : null
+
+      const sentDelta = previous ? Math.max(snapshot.bytesSent - previous.bytesSent, 0) : 0
+      const receivedDelta = previous ? Math.max(snapshot.bytesReceived - previous.bytesReceived, 0) : 0
+      const sendBitrateKbps = elapsedSeconds ? Math.round((sentDelta * 8) / elapsedSeconds / 1000) : null
+      const receiveBitrateKbps = elapsedSeconds ? Math.round((receivedDelta * 8) / elapsedSeconds / 1000) : null
+      const packetTotal = snapshot.packetsLost + snapshot.packetsReceived
+      const packetLossPercent = packetTotal > 0
+        ? Number(((snapshot.packetsLost / packetTotal) * 100).toFixed(1))
+        : null
+
+      diagnosticsPreviousRef.current = snapshot
+      store.getState().updateDiagnostics({
+        updatedAt: snapshot.updatedAt,
+        connected: snapshot.connected,
+        connectionState: snapshot.connectionState,
+        iceState: snapshot.iceState,
+        signalingState: snapshot.signalingState,
+        connectionMode: snapshot.connectionMode,
+        pathLabel: snapshot.pathLabel,
+        localCandidateType: snapshot.localCandidateType,
+        remoteCandidateType: snapshot.remoteCandidateType,
+        latencyMs: snapshot.latencyMs,
+        packetLossPercent,
+        bitrateKbps: sendBitrateKbps === null || receiveBitrateKbps === null
+          ? null
+          : sendBitrateKbps + receiveBitrateKbps,
+        sendBitrateKbps,
+        receiveBitrateKbps,
+        codec: snapshot.codec,
+        reconnectAttempts: snapshot.reconnectAttempts,
+      })
+    }
+
+    void pollDiagnostics()
+    const intervalId = window.setInterval(() => {
+      void pollDiagnostics()
+    }, 1000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [store])
+
   const actions = useMemo(
     () => ({
       connect: () => {
@@ -179,6 +235,9 @@ export function useWebRTC() {
       openReceivedFile: (entry) => fileTransferManagerRef.current?.openReceivedFile(entry),
       downloadReceivedFile: (entry) => fileTransferManagerRef.current?.downloadReceivedFile(entry),
       setDrawerCollapsed: (collapsed) => fileTransferManagerRef.current?.setDrawerCollapsed(collapsed),
+      setDiagnosticsDrawerCollapsed: (collapsed) => {
+        store.getState().updateDiagnostics({ drawerCollapsed: collapsed })
+      },
       toggleMic: () => {
         const next = toggleMic()
         if (typeof next === 'boolean') {
@@ -217,6 +276,7 @@ export function useWebRTC() {
         setConnectionMode(normalized)
         const state = store.getState()
         state.setTransportMode(mode)
+        state.updateDiagnostics({ connectionMode: normalized })
 
         if (isSocketConnectionActive(state.connectionState)) {
           safeSend({ type: 'leave' })

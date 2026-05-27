@@ -32,6 +32,26 @@ const initialFileTransferState = {
   toasts: [],
 }
 
+const initialDiagnosticsState = {
+  drawerCollapsed: true,
+  updatedAt: null,
+  connected: false,
+  connectionState: 'idle',
+  iceState: 'new',
+  signalingState: 'stable',
+  connectionMode: initialTransportMode === 'RELAY' ? 'relay' : 'p2p',
+  pathLabel: 'OFFLINE',
+  localCandidateType: null,
+  remoteCandidateType: null,
+  latencyMs: null,
+  packetLossPercent: null,
+  bitrateKbps: null,
+  sendBitrateKbps: null,
+  receiveBitrateKbps: null,
+  codec: 'N/A',
+  reconnectAttempts: 0,
+}
+
 export const useAppStore = create((set) => ({
   connectionState: 'idle',
   localStream: null,
@@ -43,6 +63,7 @@ export const useAppStore = create((set) => ({
     { id: 'boot-4', text: '> AUDIO: STANDBY', direction: 'system' },
   ],
   fileTransfer: initialFileTransferState,
+  diagnostics: initialDiagnosticsState,
   dialValue: '0000000',
   mode: initialTransportMode,
   transportMode: initialTransportMode,
@@ -68,6 +89,12 @@ export const useAppStore = create((set) => ({
       ],
     })),
   setFileTransfer: (fileTransfer) => set({ fileTransfer }),
+  setDiagnostics: (diagnostics) => set({ diagnostics }),
+  updateDiagnostics: (updater) =>
+    set((state) => ({
+      diagnostics:
+        typeof updater === 'function' ? updater(state.diagnostics) : { ...state.diagnostics, ...updater },
+    })),
   updateFileTransfer: (updater) =>
     set((state) => ({
       fileTransfer:
@@ -102,6 +129,23 @@ export const useAppStore = create((set) => ({
       statusText: 'Idle',
       statusColor: 'green',
       statusBlink: false,
+      diagnostics: {
+        ...state.diagnostics,
+        updatedAt: Date.now(),
+        connected: false,
+        connectionState: 'idle',
+        iceState: 'new',
+        signalingState: 'stable',
+        pathLabel: 'OFFLINE',
+        localCandidateType: null,
+        remoteCandidateType: null,
+        latencyMs: null,
+        packetLossPercent: null,
+        bitrateKbps: null,
+        sendBitrateKbps: null,
+        receiveBitrateKbps: null,
+        codec: 'N/A',
+      },
       fileTransfer: {
         ...state.fileTransfer,
         channelReady: false,
