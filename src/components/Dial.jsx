@@ -3,7 +3,7 @@ import React from 'react'
 export default function Dial({ value, disabled, joinError, onChangeDigit }) {
   return (
     <div
-      className={`hidden md:flex justify-start items-center gap-4 bg-black/40 px-6 py-3 border border-green-900 rounded-md shadow-[0_0_10px_rgba(0,255,0,0.2)] ${
+      className={`channel-dial hidden md:flex justify-start items-center gap-4 px-6 py-3 rounded-md ${
         disabled ? 'ring-2 ring-orange-500' : ''
       }`}
     >

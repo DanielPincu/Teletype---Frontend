@@ -77,7 +77,7 @@ export default function VideoPanel({
   const isConnected = connectionState === 'connected'
 
   return (
-    <div className="md:col-span-2 grid md:grid-cols-2 gap-6 h-full">
+    <div className="md:col-span-2 grid md:grid-cols-2 gap-4 h-full">
       <VideoScreen
         title="LOCAL OSCILLOSCOPE [YOU]"
         stream={localStream}

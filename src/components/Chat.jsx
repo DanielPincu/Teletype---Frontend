@@ -23,7 +23,7 @@ export default function Chat({ messages, connected, onSendMessage }) {
   }
 
   return (
-    <div className="terminal-shell p-4 flex flex-col h-[40vh] md:h-[360px] overflow-hidden">
+    <div className="terminal-shell p-3 flex flex-col h-[40vh] md:h-[300px] overflow-hidden">
       <div className="flex justify-between items-center mb-2 border-b border-amber-900 pb-2 gap-3 flex-wrap">
         <span className="text-amber-600 text-sm">RTTY Transceiver</span>
       </div>
@@ -39,8 +39,8 @@ export default function Chat({ messages, connected, onSendMessage }) {
         </div>
       </div>
 
-      <div className="terminal-composer mt-3 shrink-0">
-        <div className="flex gap-2 items-start border border-amber-900/50 rounded-lg px-3 py-2 bg-amber-950/10">
+      <div className="terminal-composer mt-2 shrink-0">
+        <div className="flex gap-2 items-start border border-amber-900/50 rounded-lg px-3 py-1.5 bg-amber-950/10">
           <span className="text-amber-500">&gt;</span>
           <textarea
             value={text}
@@ -48,7 +48,7 @@ export default function Chat({ messages, connected, onSendMessage }) {
             maxLength={500}
             disabled={!connected}
             placeholder={connected ? 'ENTER TEXT TO TRANSMIT...' : 'DISCONNECTED'}
-            className="w-full resize-none border-none bg-transparent text-amber-300 max-h-20 h-12 overflow-y-auto"
+            className="w-full resize-none border-none bg-transparent text-amber-300 max-h-16 h-10 overflow-y-auto"
             onChange={(event) => setText(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter' && !event.shiftKey) {
