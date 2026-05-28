@@ -83,9 +83,9 @@ export function useWebRTC() {
 
     connectSocket({
       onClose: () => {
-        resetPeer()
         const state = store.getState()
-        if (state.connectionState !== 'idle') {
+        if (state.connectionState === 'connecting') {
+          resetPeer()
           state.resetConnectionUi()
           state.setStatus('Signal link reset', 'yellow')
         }
@@ -101,6 +101,15 @@ export function useWebRTC() {
         }
 
         if (message.type === 'peer-found') {
+          state.setConnectionState('connecting')
+          state.setStatus('Connecting...', 'yellow', true)
+          await handleSignal(message)
+          return
+        }
+
+        if (message.type === 'offer') {
+          state.setConnectionState('connecting')
+          state.setStatus('Connecting...', 'yellow', true)
           await handleSignal(message)
           return
         }

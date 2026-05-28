@@ -494,7 +494,10 @@ export function createFileTransferManager({ store, notifyWithRTTY }) {
     link.href = entry.url
     link.download = entry.name
     link.rel = 'noopener'
+    link.style.display = 'none'
+    document.body.appendChild(link)
     link.click()
+    link.remove()
   }
 
   const revokeAllReceivedFiles = () => {
