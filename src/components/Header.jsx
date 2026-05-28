@@ -56,7 +56,7 @@ export default function Header({ connectionState, syncCode }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 text-xs font-mono text-amber-400 bg-black/40 border border-amber-800/60 px-3 py-2 rounded shadow-[inset_0_0_10px_rgba(255,140,0,0.2)] min-w-[200px] md:w-[24rem] justify-self-end">
+      <div className="header-status-panel flex flex-col gap-1 text-xs font-mono text-amber-400 bg-black/40 border border-amber-800/60 px-3 py-2 rounded shadow-[inset_0_0_10px_rgba(255,140,0,0.2)] min-w-[200px] md:w-[24rem] justify-self-end">
         <div className="flex items-center justify-center gap-4">
           <div className="flex items-center gap-2">
             <span>PWR</span>

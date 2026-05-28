@@ -17,7 +17,7 @@ const MIN_INPUT_GAIN = 0.35
 const MAX_INPUT_GAIN = 2.4
 const DEFAULT_OUTPUT_LEVEL = 0.82
 const MIN_OUTPUT_LEVEL = 0.45
-const MAX_OUTPUT_LEVEL = 1.35
+const MAX_OUTPUT_LEVEL = 1
 const KNOB_STEP = 0.05
 const MIN_DB = -48
 const MAX_DB = -3
@@ -31,6 +31,20 @@ const DIAL_PIVOT_Y = 74
 const DIAL_TICK_INNER = 42
 const DIAL_TICK_OUTER = 52
 const DIAL_LABEL_RADIUS = 32
+const METER_CONTROL_LIMITS = {
+  inputGain: {
+    defaultValue: DEFAULT_INPUT_GAIN,
+    min: MIN_INPUT_GAIN,
+    max: MAX_INPUT_GAIN,
+    step: KNOB_STEP,
+  },
+  outputLevel: {
+    defaultValue: DEFAULT_OUTPUT_LEVEL,
+    min: MIN_OUTPUT_LEVEL,
+    max: MAX_OUTPUT_LEVEL,
+    step: KNOB_STEP,
+  },
+}
 
 function clamp(value, min = 0, max = 100) {
   return Math.min(max, Math.max(min, value))
@@ -211,18 +225,45 @@ function SignalLedStrip({ level }) {
   )
 }
 
+function MiniUtilityGauge({ label, level, invert = false }) {
+  const movement = (clamp(level) / 100) * 52
+  const needleAngle = invert ? 18 - movement : -18 + movement
+
+  return (
+    <div className="mini-meter-face" aria-label={`${label} meter`}>
+      <svg className="mini-meter-scale" viewBox="0 0 128 128" aria-hidden="true">
+        <line x1="32" y1="82" x2="42" y2="76" />
+        <line x1="64" y1="67" x2="64" y2="55" />
+        <line x1="96" y1="82" x2="86" y2="76" />
+        <text x="64" y="98">{label}</text>
+      </svg>
+      <div className="mini-meter-needle" style={{ transform: `rotate(${needleAngle}deg)` }} />
+      <div className="mini-meter-pivot" />
+    </div>
+  )
+}
+
 export default function SMeter({
   micEnabled,
+  meterLabel = 'SIGNAL',
   sourceStream = null,
   useOwnMic = true,
   showLeftKnob = true,
   showRightKnob = true,
   showLedStrip = true,
   onLevelChange = null,
+  inputGain: controlledInputGain = null,
+  outputLevel: controlledOutputLevel = null,
+  onInputGainChange = null,
+  onOutputLevelChange = null,
 }) {
   const [level, setLevel] = useState(0)
-  const [inputGain, setInputGain] = useState(DEFAULT_INPUT_GAIN)
-  const [outputLevel, setOutputLevel] = useState(DEFAULT_OUTPUT_LEVEL)
+  const [internalInputGain, setInternalInputGain] = useState(DEFAULT_INPUT_GAIN)
+  const [internalOutputLevel, setInternalOutputLevel] = useState(DEFAULT_OUTPUT_LEVEL)
+  const inputGain = controlledInputGain ?? internalInputGain
+  const outputLevel = controlledOutputLevel ?? internalOutputLevel
+  const setInputGain = onInputGainChange ?? setInternalInputGain
+  const setOutputLevel = onOutputLevelChange ?? setInternalOutputLevel
 
   const micEnabledRef = useRef(micEnabled)
   const inputGainRef = useRef(inputGain)
@@ -258,6 +299,7 @@ export default function SMeter({
       velocityRef.current = 0
       lastFrameRef.current = 0
       setLevel(0)
+      onLevelChange?.(0)
     }
 
     const tick = (timestamp) => {
@@ -415,7 +457,7 @@ export default function SMeter({
               <DialTick key={mark.label} mark={mark} />
             ))}
             <text className="s-meter-signal-label" x="64" y="103">
-              SIGNAL
+              {meterLabel}
             </text>
           </svg>
 
@@ -440,4 +482,4 @@ export default function SMeter({
   )
 }
 
-export { SignalLedStrip }
+export { METER_CONTROL_LIMITS, MiniUtilityGauge, RotaryKnob as MeterKnob, SignalLedStrip }

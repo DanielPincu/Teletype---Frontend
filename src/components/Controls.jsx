@@ -58,8 +58,6 @@ export default function Controls({
   return (
     <div className="flex items-start justify-end md:col-start-2">
       <div className="radio-control-panel">
-        <span className="panel-bolt panel-bolt-bottom-left" aria-hidden="true" />
-        <span className="panel-bolt panel-bolt-bottom-right" aria-hidden="true" />
         <div className="radio-control-top">
           <div className="radio-switch-bank">
             <div className="flex flex-col items-center gap-2">

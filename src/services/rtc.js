@@ -7,6 +7,10 @@ let pendingCandidates = []
 let chatChannel = null
 let fileTransferChannel = null
 let cameraTrack = null
+let micAudioContext = null
+let micGainNode = null
+let processedMicTrack = null
+let desiredMicGain = 1
 let isScreenSharing = false
 let connectTimeoutId = null
 let rtcSessionId = 0
@@ -128,6 +132,40 @@ export const rtcHandlers = {
 
 export function getReconnectAttempts() {
   return reconnectAttempts
+}
+
+export function setMicrophoneGain(value) {
+  desiredMicGain = Math.max(0.2, Math.min(3, value))
+
+  if (!micGainNode) return
+  micGainNode.gain.value = desiredMicGain
+}
+
+function createProcessedAudioTrack(stream) {
+  const audioTrack = stream.getAudioTracks()[0]
+  if (!audioTrack) return null
+
+  try {
+    micAudioContext = new (window.AudioContext || window.webkitAudioContext)()
+    const source = micAudioContext.createMediaStreamSource(new MediaStream([audioTrack]))
+    micGainNode = micAudioContext.createGain()
+    micGainNode.gain.value = desiredMicGain
+
+    const destination = micAudioContext.createMediaStreamDestination()
+    source.connect(micGainNode)
+    micGainNode.connect(destination)
+
+    processedMicTrack = destination.stream.getAudioTracks()[0] || null
+    if (processedMicTrack) processedMicTrack.enabled = audioTrack.enabled
+
+    return processedMicTrack
+  } catch (error) {
+    console.warn('Failed to create microphone gain node', error)
+    micAudioContext = null
+    micGainNode = null
+    processedMicTrack = null
+    return null
+  }
 }
 
 export async function getConnectionDiagnostics() {
@@ -344,9 +382,9 @@ export async function startPeer(isInitiator, id) {
   rtcHandlers.onLocalStream?.(localStream)
   cameraTrack = localStream.getVideoTracks()[0]
 
-  localStream.getTracks().forEach((track) => {
-    pc.addTrack(track, localStream)
-  })
+  const sendAudioTrack = createProcessedAudioTrack(localStream) || audioTrack
+  if (sendAudioTrack) pc.addTrack(sendAudioTrack, localStream)
+  if (videoTrack) pc.addTrack(videoTrack, localStream)
 
   pc.ontrack = (event) => {
     let stream = pc.remoteStream
@@ -536,6 +574,7 @@ export function toggleMic() {
   if (!track) return null
 
   track.enabled = !track.enabled
+  if (processedMicTrack) processedMicTrack.enabled = track.enabled
   setStoredState('micEnabled', track.enabled)
   return track.enabled
 }
@@ -630,6 +669,20 @@ export function resetPeer() {
     localStream.getTracks().forEach((track) => track.stop())
     localStream = null
   }
+
+  if (processedMicTrack) {
+    try {
+      processedMicTrack.stop()
+    } catch {}
+    processedMicTrack = null
+  }
+
+  if (micAudioContext) {
+    micAudioContext.close().catch(() => {})
+    micAudioContext = null
+  }
+
+  micGainNode = null
 
   pendingCandidates = []
   cameraTrack = null

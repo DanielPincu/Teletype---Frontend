@@ -10,6 +10,7 @@ function VideoScreen({
   placeholderSubtitle,
   placeholderIcon,
   controls = null,
+  volume = 1,
 }) {
   const videoRef = useRef(null)
 
@@ -19,8 +20,9 @@ function VideoScreen({
       if (stream) {
         videoRef.current.play().catch(() => {})
       }
+      videoRef.current.volume = volume
     }
-  }, [stream])
+  }, [stream, volume])
 
   return (
     <div className="crt-container h-full flex flex-col">
@@ -70,6 +72,7 @@ export default function VideoPanel({
   micEnabled,
   camEnabled,
   isSharing,
+  remoteVolume = 1,
   onToggleMic,
   onToggleCam,
   onToggleScreenShare,
@@ -123,6 +126,7 @@ export default function VideoPanel({
       <VideoScreen
         title="REMOTE SIGNAL [INCOMING]"
         stream={remoteStream}
+        volume={remoteVolume}
         badge="CH B"
         placeholderTitle="SCANNING BANDS..."
         placeholderSubtitle=""

@@ -4,7 +4,7 @@ import Dial from './components/Dial.jsx'
 import Controls from './components/Controls.jsx'
 import VideoPanel from './components/VideoPanel.jsx'
 import Chat from './components/Chat.jsx'
-import SMeter, { SignalLedStrip } from './components/SMeter.jsx'
+import SMeter, { METER_CONTROL_LIMITS, MeterKnob, MiniUtilityGauge, SignalLedStrip } from './components/SMeter.jsx'
 import TransferDrawer from './components/TransferDrawer.jsx'
 import DiagnosticsDrawer from './components/DiagnosticsDrawer.jsx'
 import { useWebRTC } from './hooks/useWebRTC.js'
@@ -12,6 +12,9 @@ import { useAppStore } from './store/useAppStore.js'
 
 export default function App() {
   const [localMeterLevel, setLocalMeterLevel] = useState(0)
+  const [remoteMeterLevel, setRemoteMeterLevel] = useState(0)
+  const [meterOutputLevel, setMeterOutputLevel] = useState(METER_CONTROL_LIMITS.outputLevel.defaultValue)
+  const [meterInputGain, setMeterInputGain] = useState(METER_CONTROL_LIMITS.inputGain.defaultValue)
   const actions = useWebRTC()
   const connectionState = useAppStore((state) => state.connectionState)
   const localStream = useAppStore((state) => state.localStream)
@@ -30,11 +33,16 @@ export default function App() {
   const statusText = useAppStore((state) => state.statusText)
   const statusColor = useAppStore((state) => state.statusColor)
   const statusBlink = useAppStore((state) => state.statusBlink)
+  const utilityMeterLevel = Math.max(localMeterLevel, remoteMeterLevel)
 
   useEffect(() => {
     actions.syncTransportModeFromRtc()
     // sync once from the RTC module's persisted mode on initial mount
   }, [])
+
+  useEffect(() => {
+    actions.setMicrophoneGain(meterInputGain)
+  }, [actions, meterInputGain])
 
   return (
     <div className="app-shell">
@@ -44,8 +52,6 @@ export default function App() {
         <div className="main-control-panel bg-black/30 border border-amber-800/70 rounded-xl">
           <div className="grid md:grid-cols-2 gap-2 items-center">
             <div className="channel-control-panel md:col-start-1 h-full">
-              <span className="panel-bolt panel-bolt-bottom-left" aria-hidden="true" />
-              <span className="panel-bolt panel-bolt-bottom-right" aria-hidden="true" />
               <div className="channel-selector-label hidden md:flex items-center gap-2 text-xs font-mono px-3 py-1 rounded-r">
                 <span className="text-green-400">PRIVATE CHANNEL SELECTOR</span>
               </div>
@@ -79,21 +85,52 @@ export default function App() {
             >
               <div className="s-meter-bank">
                 <div className="s-meter-gauges">
+                  <div className="s-meter-control-stack">
+                    <MeterKnob
+                      label="GAIN"
+                      value={meterInputGain}
+                      min={METER_CONTROL_LIMITS.inputGain.min}
+                      max={METER_CONTROL_LIMITS.inputGain.max}
+                      step={METER_CONTROL_LIMITS.inputGain.step}
+                      nominalValue={METER_CONTROL_LIMITS.inputGain.defaultValue}
+                      onChange={setMeterInputGain}
+                    />
+                    <MiniUtilityGauge label="VOLT" level={utilityMeterLevel} invert />
+                  </div>
                   <SMeter
                     micEnabled={micEnabled}
+                    meterLabel="OUTBOUND"
+                    showLeftKnob={false}
                     showRightKnob={false}
                     showLedStrip={false}
                     onLevelChange={setLocalMeterLevel}
+                    inputGain={meterInputGain}
                   />
                   <SMeter
                     micEnabled={Boolean(remoteStream)}
+                    meterLabel="INBOUND"
                     sourceStream={remoteStream}
                     useOwnMic={false}
                     showLeftKnob={false}
+                    showRightKnob={false}
                     showLedStrip={false}
+                    onLevelChange={setRemoteMeterLevel}
+                    outputLevel={meterOutputLevel}
                   />
+                  <div className="s-meter-control-stack">
+                    <MeterKnob
+                      label="VOL"
+                      value={meterOutputLevel}
+                      min={METER_CONTROL_LIMITS.outputLevel.min}
+                      max={METER_CONTROL_LIMITS.outputLevel.max}
+                      step={METER_CONTROL_LIMITS.outputLevel.step}
+                      nominalValue={METER_CONTROL_LIMITS.outputLevel.defaultValue}
+                      onChange={setMeterOutputLevel}
+                    />
+                    <MiniUtilityGauge label="AMP" level={utilityMeterLevel} />
+                  </div>
                 </div>
-                <SignalLedStrip level={localMeterLevel} />
+                <SignalLedStrip level={Math.max(localMeterLevel, remoteMeterLevel)} />
               </div>
             </Controls>
           </div>
@@ -107,6 +144,7 @@ export default function App() {
             micEnabled={micEnabled}
             camEnabled={camEnabled}
             isSharing={isSharing}
+            remoteVolume={meterOutputLevel}
             onToggleMic={actions.toggleMic}
             onToggleCam={actions.toggleCam}
             onToggleScreenShare={actions.toggleScreenShare}

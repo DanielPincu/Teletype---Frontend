@@ -412,9 +412,18 @@ body::before {
 
 .s-meter-gauges {
   display: grid;
-  grid-template-columns: repeat(2, max-content);
+  grid-template-columns: max-content repeat(2, max-content) max-content;
   gap: 0.55rem;
-  align-items: start;
+  justify-content: center;
+  align-items: center;
+}
+
+.s-meter-control-stack {
+  display: flex;
+  width: 66px;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .s-meter-face {
@@ -458,34 +467,99 @@ body::before {
 }
 
 .s-meter-bank .s-meter-dial-row.has-left-knob {
-  grid-template-columns: 52px minmax(112px, 128px);
+  grid-template-columns: 66px minmax(112px, 128px);
 }
 
 .s-meter-bank .s-meter-dial-row.has-right-knob {
-  grid-template-columns: minmax(112px, 128px) 52px;
+  grid-template-columns: minmax(112px, 128px) 66px;
 }
 
 .s-meter-bank .s-meter-dial-row.has-left-knob.has-right-knob {
-  grid-template-columns: 52px minmax(112px, 128px) 52px;
+  grid-template-columns: 66px minmax(112px, 128px) 66px;
 }
 
 .s-meter-bank .s-meter-knob-stack {
-  width: 52px;
+  width: 66px;
 }
 
 .s-meter-bank .s-meter-knob {
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
 }
 
 .s-meter-bank .s-meter-knob-indicator::before {
-  top: 8px;
-  height: 15px;
+  top: 9px;
+  width: 4px;
+  height: 18px;
+}
+
+.mini-meter-face {
+  position: relative;
+  width: 54px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid rgba(120, 53, 15, 0.78);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(255, 249, 226, 0.78), rgba(255, 249, 226, 0) 28%),
+    radial-gradient(circle at 50% 54%, #ead99d 0 48%, #bd8431 66%, #4d2609 67% 70%, #160a03 72% 100%);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.32),
+    inset 0 -8px 14px rgba(54, 28, 6, 0.44),
+    0 1px 6px rgba(0, 0, 0, 0.32);
+}
+
+.mini-meter-scale {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mini-meter-scale line {
+  stroke: var(--meter-ink);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.mini-meter-scale text {
+  fill: rgba(41, 22, 8, 0.64);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.mini-meter-needle {
+  position: absolute;
+  left: 50%;
+  top: 24%;
+  bottom: 42%;
+  width: 2px;
+  margin-left: -1px;
+  transform-origin: bottom center;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(180deg, #120802, #2a1307 58%, #070301);
+  box-shadow: 0 0 2px rgba(41, 22, 8, 0.7);
+  transition: transform 0.09s linear;
+}
+
+.mini-meter-pivot {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(41, 22, 8, 0.8);
+  border-radius: 999px;
+  background: radial-gradient(circle, #f3ca64 0 24%, #7c3f0d 25% 58%, #1f1107 60%);
 }
 
 .s-meter-led-strip {
-  width: 136%;
+  width: 126%;
   justify-self: center;
+  padding-inline: 0.35rem;
 }
 
 .s-meter-knob-stack {
@@ -645,6 +719,119 @@ body::before {
   transition: width 0.04s linear;
 }
 
+@media (max-width: 767px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  .app-shell {
+    width: min(100vw - 10px, 100%);
+    padding-top: 0.35rem;
+  }
+
+  .chassis {
+    padding: 0.5rem !important;
+  }
+
+  .main-control-panel {
+    overflow: hidden;
+    padding: 0.5rem;
+  }
+
+  .header-status-panel {
+    min-width: 0 !important;
+    width: 100%;
+    padding-inline: 0.5rem;
+  }
+
+  .channel-control-panel,
+  .radio-control-panel {
+    width: 100%;
+    min-width: 0;
+    padding: 0.65rem;
+  }
+
+  .channel-sync-display {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .channel-sync-code {
+    max-width: 100%;
+    font-size: 1.05rem;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .radio-control-top {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+
+  .radio-switch-bank,
+  .radio-status-bank {
+    min-height: auto;
+    padding: 0.65rem 0.5rem;
+  }
+
+  .radio-meter-section {
+    overflow: hidden;
+    padding: 0.65rem 0.55rem 0.58rem;
+  }
+
+  .s-meter-bank {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .s-meter-gauges {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+    width: 100%;
+    justify-items: center;
+  }
+
+  .s-meter-control-stack {
+    display: none;
+  }
+
+  .s-meter-bank .s-meter-face {
+    width: min(104px, 40vw);
+  }
+
+  .s-meter-bank .s-meter-dial-row {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 0;
+    margin-bottom: 0.35rem;
+  }
+
+  .s-meter-led-strip {
+    width: 100%;
+    padding-inline: 0.15rem;
+  }
+
+  .chassis > .mb-3 > .ml-auto {
+    width: 100%;
+    min-width: 0;
+    margin-left: 0;
+  }
+
+  .chassis > .mb-1 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
+  }
+
+  .chassis > .mb-1 > * {
+    justify-self: stretch;
+  }
+
+  .crt-container .grid.grid-cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .status-indicator-blink {
   animation-name: statusBlink;
   animation-timing-function: steps(2, end);
@@ -707,6 +894,7 @@ body::before {
   left: -2.8rem;
   width: 2.8rem;
   height: 10rem;
+  overflow: hidden;
   transform: translateY(-50%);
   border: 1px solid rgba(245, 158, 11, 0.55);
   border-right: none;
@@ -716,11 +904,29 @@ body::before {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     -10px 14px 24px rgba(0, 0, 0, 0.22);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease;
   pointer-events: auto;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
+}
+
+.transfer-drawer-toggle::before,
+.diagnostics-drawer-toggle::before {
+  content: '';
+  position: absolute;
+  inset: -35% 0;
+  background: linear-gradient(180deg, transparent, rgba(254, 243, 199, 0.24), transparent);
+  opacity: 0;
+  transform: translateY(-45%);
+  transition:
+    opacity 0.18s ease,
+    transform 0.42s ease;
 }
 
 .diagnostics-drawer {
@@ -747,6 +953,7 @@ body::before {
   right: -2.8rem;
   width: 2.8rem;
   height: 10rem;
+  overflow: hidden;
   transform: translateY(-50%);
   border: 1px solid rgba(245, 158, 11, 0.55);
   border-left: none;
@@ -756,6 +963,11 @@ body::before {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     10px 14px 24px rgba(0, 0, 0, 0.22);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease;
   pointer-events: auto;
   display: flex;
   align-items: center;
@@ -763,17 +975,55 @@ body::before {
   padding: 0;
 }
 
+.transfer-drawer-toggle:hover,
+.transfer-drawer-toggle:focus-visible {
+  transform: translateY(-50%);
+  border-color: rgba(251, 191, 36, 0.95);
+  color: #fff7d6;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 18px rgba(251, 191, 36, 0.12),
+    -12px 14px 30px rgba(0, 0, 0, 0.28),
+    0 0 18px rgba(245, 158, 11, 0.26);
+}
+
+.diagnostics-drawer-toggle:hover,
+.diagnostics-drawer-toggle:focus-visible {
+  transform: translateY(-50%);
+  border-color: rgba(74, 222, 128, 0.72);
+  color: #ecfccb;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 18px rgba(74, 222, 128, 0.1),
+    12px 14px 30px rgba(0, 0, 0, 0.28),
+    0 0 18px rgba(34, 197, 94, 0.24);
+}
+
+.transfer-drawer-toggle:hover::before,
+.transfer-drawer-toggle:focus-visible::before,
+.diagnostics-drawer-toggle:hover::before,
+.diagnostics-drawer-toggle:focus-visible::before {
+  opacity: 1;
+  transform: translateY(45%);
+}
+
 .transfer-drawer-toggle-text {
+  position: relative;
+  z-index: 1;
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   letter-spacing: 0.18em;
   font-size: 0.72rem;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.22);
 }
 
 .diagnostics-drawer-toggle-text {
+  position: relative;
+  z-index: 1;
   writing-mode: vertical-rl;
   letter-spacing: 0.18em;
   font-size: 0.72rem;
+  text-shadow: 0 0 8px rgba(74, 222, 128, 0.22);
 }
 
 .transfer-station {
@@ -1058,6 +1308,10 @@ textarea:focus {
 }
 
 @media (max-width: 767px) {
+  .diagnostics-drawer-toggle {
+    display: none;
+  }
+
   .diagnostics-drawer,
   .transfer-drawer {
     top: auto;

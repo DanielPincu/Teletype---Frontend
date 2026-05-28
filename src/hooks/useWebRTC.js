@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useAppStore } from '../store/useAppStore.js'
 import { connectSocket, disconnectSocket, safeSend } from '../services/network.js'
-import { getConnectionDiagnostics, getConnectionMode, getScreenShareState, handleSignal, resetPeer, rtcHandlers, setConnectionMode, toggleCam, toggleMic, toggleScreenShare } from '../services/rtc.js'
+import { getConnectionDiagnostics, getConnectionMode, getScreenShareState, handleSignal, resetPeer, rtcHandlers, setConnectionMode, setMicrophoneGain, toggleCam, toggleMic, toggleScreenShare } from '../services/rtc.js'
 import { createFileTransferManager } from '../services/fileTransfer.js'
 import { isSocketConnectionActive, requestConnection } from '../services/connection.js'
 import { sendRTTY } from '../utils/rtty.js'
@@ -283,6 +283,9 @@ export function useWebRTC() {
           resetPeer()
           rtcHandlers.onDisconnected?.()
         }
+      },
+      setMicrophoneGain: (value) => {
+        setMicrophoneGain(value)
       },
       toggleLock: () => {
         const state = store.getState()
