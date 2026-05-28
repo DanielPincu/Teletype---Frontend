@@ -82,6 +82,14 @@ export function useWebRTC() {
     }
 
     connectSocket({
+      onClose: () => {
+        resetPeer()
+        const state = store.getState()
+        if (state.connectionState !== 'idle') {
+          state.resetConnectionUi()
+          state.setStatus('Signal link reset', 'yellow')
+        }
+      },
       onMessage: async (message) => {
         const state = store.getState()
 
@@ -196,12 +204,16 @@ export function useWebRTC() {
 
         if (state.connectionState === 'connecting') {
           safeSend({ type: 'leave' })
+          resetPeer()
           state.setConnectionState('idle')
           state.setStatus('Idle', 'green')
           return
         }
 
         state.setJoinError(false)
+        resetPeer()
+        connectSocket()
+        safeSend({ type: 'leave' })
         const request = requestConnection({
           isLocked: state.isLocked,
           dialValue: state.dialValue,

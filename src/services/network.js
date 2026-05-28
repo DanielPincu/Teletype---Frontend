@@ -12,7 +12,9 @@ export function safeSend(data) {
 }
 
 export function connectSocket(handlers = {}) {
-  currentHandlers = handlers
+  if (Object.keys(handlers).length > 0) {
+    currentHandlers = handlers
+  }
 
   if (socket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(socket.readyState)) {
     return socket
@@ -22,29 +24,33 @@ export function connectSocket(handlers = {}) {
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   const host = isLocal ? 'localhost:3000' : window.location.host
 
-  socket = new WebSocket(`${protocol}://${host}/ws`)
+  const nextSocket = new WebSocket(`${protocol}://${host}/ws`)
+  socket = nextSocket
 
-  socket.onopen = () => {
+  nextSocket.onopen = () => {
     while (sendQueue.length > 0) {
-      socket.send(JSON.stringify(sendQueue.shift()))
+      nextSocket.send(JSON.stringify(sendQueue.shift()))
     }
     currentHandlers.onOpen?.()
   }
 
-  socket.onmessage = async (event) => {
+  nextSocket.onmessage = async (event) => {
     const message = JSON.parse(event.data)
     await currentHandlers.onMessage?.(message)
   }
 
-  socket.onclose = () => {
+  nextSocket.onclose = () => {
+    if (socket === nextSocket) {
+      socket = null
+    }
     currentHandlers.onClose?.()
   }
 
-  socket.onerror = (error) => {
+  nextSocket.onerror = (error) => {
     currentHandlers.onError?.(error)
   }
 
-  return socket
+  return nextSocket
 }
 
 export function disconnectSocket() {

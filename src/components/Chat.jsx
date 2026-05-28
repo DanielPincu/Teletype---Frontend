@@ -23,7 +23,7 @@ export default function Chat({ messages, connected, onSendMessage }) {
   }
 
   return (
-    <div className="terminal-shell p-2.5 flex flex-col h-[40vh] md:h-[260px] overflow-hidden">
+    <div className="terminal-shell p-2.5 flex flex-col h-[40vh] md:h-full md:min-h-[260px] overflow-hidden">
       <div className="flex justify-between items-center mb-2 border-b border-amber-900 pb-2 gap-3 flex-wrap">
         <span className="text-amber-600 text-sm">RTTY Transceiver</span>
       </div>
