@@ -60,8 +60,8 @@ export default function DiagnosticsDrawer({ diagnostics, onToggleDrawer }) {
         </span>
       </button>
 
-      <div id="diagnosticsDrawerPanel" className="diagnostics-station rounded-2xl border border-amber-800/60 p-4 md:p-5">
-        <div className="flex items-center justify-between gap-4 flex-wrap border-b border-amber-900/70 pb-3">
+      <div id="diagnosticsDrawerPanel" className="diagnostics-station rounded-2xl border border-amber-800/60 p-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap border-b border-amber-900/70 pb-2">
           <div>
             <div className="text-sm glow-text">SIGNAL INTELLIGENCE PANEL</div>
             <div className="mt-1 text-xs text-amber-700">Last scan: {updatedTime}</div>
@@ -71,7 +71,7 @@ export default function DiagnosticsDrawer({ diagnostics, onToggleDrawer }) {
           </div>
         </div>
 
-        <div className="mt-4 diagnostics-panel rounded-lg border border-amber-900/60 px-3 py-3">
+        <div className="mt-3 diagnostics-panel rounded-lg border border-amber-900/60 px-2.5 py-2.5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="text-xs tracking-wide text-amber-500">ACTIVE PATH</div>
@@ -80,7 +80,7 @@ export default function DiagnosticsDrawer({ diagnostics, onToggleDrawer }) {
             <div className="diagnostics-badge">{formatMode(diagnostics.connectionMode)}</div>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-3 grid grid-cols-2 gap-2">
             <StatTile label="Latency" value={formatValue(diagnostics.latencyMs, ' ms')} tone={diagnostics.latencyMs > 180 ? 'red' : 'green'} />
             <StatTile label="Packet Loss" value={formatValue(diagnostics.packetLossPercent, '%')} tone={diagnostics.packetLossPercent > 2 ? 'red' : 'green'} />
             <StatTile label="Bitrate" value={formatValue(diagnostics.bitrateKbps, ' kbps')} />
@@ -88,7 +88,7 @@ export default function DiagnosticsDrawer({ diagnostics, onToggleDrawer }) {
           </div>
         </div>
 
-        <div className="mt-4 diagnostics-panel rounded-lg border border-amber-900/60 px-3 py-3">
+        <div className="mt-3 diagnostics-panel rounded-lg border border-amber-900/60 px-2.5 py-2.5">
           <div className="flex items-center justify-between gap-3">
             <span className="text-xs tracking-wide text-amber-500">SIGNAL QUALITY</span>
             <span className="text-xs text-amber-600">{Math.round(qualityScore)}%</span>
@@ -97,7 +97,7 @@ export default function DiagnosticsDrawer({ diagnostics, onToggleDrawer }) {
             <div className="diagnostics-progress-bar" style={{ width: `${qualityScore}%` }} />
           </div>
 
-          <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="mt-3 flex items-center justify-between gap-3">
             <span className="text-xs tracking-wide text-amber-500">THROUGHPUT</span>
             <span className="text-xs text-amber-600">
               TX {formatValue(diagnostics.sendBitrateKbps, 'k')} / RX {formatValue(diagnostics.receiveBitrateKbps, 'k')}
@@ -108,8 +108,8 @@ export default function DiagnosticsDrawer({ diagnostics, onToggleDrawer }) {
           </div>
         </div>
 
-        <div className="mt-4 diagnostics-panel rounded-lg border border-amber-900/60 px-3 py-3">
-          <div className="grid gap-3">
+        <div className="mt-3 diagnostics-panel rounded-lg border border-amber-900/60 px-2.5 py-2.5">
+          <div className="grid gap-2">
             <StatTile label="ICE State" value={diagnostics.iceState.toUpperCase()} />
             <StatTile label="Peer State" value={diagnostics.connectionState.toUpperCase()} />
             <StatTile label="Codec" value={diagnostics.codec} />

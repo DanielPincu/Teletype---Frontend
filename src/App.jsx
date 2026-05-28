@@ -46,7 +46,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <div className="chassis p-3 md:px-5 md:py-3">
+      <div className="chassis p-2 md:px-4 md:py-2">
         <Header connectionState={connectionState} syncCode={syncCode} />
 
         <div className="main-control-panel bg-black/30 border border-amber-800/70 rounded-xl">
@@ -136,7 +136,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="main-media-grid grid md:grid-cols-3 gap-4 items-stretch">
+        <div className="main-media-grid grid md:grid-cols-3 gap-3 items-stretch">
           <VideoPanel
             localStream={localStream}
             remoteStream={remoteStream}

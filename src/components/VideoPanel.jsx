@@ -11,6 +11,7 @@ function VideoScreen({
   placeholderIcon,
   controls = null,
   volume = 1,
+  fullscreenEnabled = true,
 }) {
   const videoRef = useRef(null)
 
@@ -37,8 +38,12 @@ function VideoScreen({
           {title.includes('REMOTE') ? (
             <button
               type="button"
-              className="btn-retro px-2 py-1 text-xs rounded"
-              onClick={() => videoRef.current?.requestFullscreen?.()}
+              className="btn-retro px-2 py-1 text-xs rounded disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!fullscreenEnabled}
+              onClick={() => {
+                if (!fullscreenEnabled) return
+                videoRef.current?.requestFullscreen?.()
+              }}
             >
               <MaximizeIcon />
             </button>
@@ -127,6 +132,7 @@ export default function VideoPanel({
         title="REMOTE SIGNAL [INCOMING]"
         stream={remoteStream}
         volume={remoteVolume}
+        fullscreenEnabled={isConnected && Boolean(remoteStream)}
         badge="CH B"
         placeholderTitle="SCANNING BANDS..."
         placeholderSubtitle=""

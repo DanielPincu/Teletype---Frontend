@@ -33,18 +33,18 @@ body {
 }
 
 .app-shell {
-  width: min(1280px, calc(100vw - 24px));
+  width: min(1220px, calc(100vw - 24px));
   margin: 0 auto;
-  padding-top: 0.75rem;
+  padding-top: 0.35rem;
 }
 
 .main-control-panel {
-  margin-bottom: 0.8rem;
-  padding: 0.75rem;
+  margin-bottom: 0.45rem;
+  padding: 0.55rem;
 }
 
 .main-media-grid {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.35rem;
 }
 
 body::before {
@@ -96,7 +96,7 @@ body::before {
   background: rgba(0, 0, 0, 0.26);
   border: 1px solid var(--line);
   border-radius: 16px;
-  padding: 10px;
+  padding: 8px;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
@@ -124,7 +124,7 @@ body::before {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 178px;
+  min-height: 150px;
   background: rgba(0, 0, 0, 0.7);
 }
 
@@ -247,15 +247,15 @@ body::before {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
+  gap: 0.35rem;
   max-width: none;
-  padding: 0.8rem 0.9rem;
+  padding: 0.55rem 0.7rem;
 }
 
 .radio-control-panel {
   max-width: none;
   margin-left: auto;
-  padding: 0.8rem 0.95rem 0.85rem;
+  padding: 0.55rem 0.75rem 0.6rem;
 }
 
 
@@ -286,10 +286,10 @@ body::before {
 .channel-sync-display {
   display: grid;
   min-width: min(100%, 34rem);
-  min-height: 4rem;
+  min-height: 3.45rem;
   place-items: center;
   row-gap: 0.18rem;
-  padding: 0.45rem 0.75rem;
+  padding: 0.35rem 0.65rem;
   border: 1px solid rgba(245, 158, 11, 0.36);
   border-radius: 6px;
   background:
@@ -338,8 +338,8 @@ body::before {
   grid-template-columns: minmax(0, 1fr) minmax(150px, 0.34fr);
   align-items: center;
   justify-content: stretch;
-  gap: 0.75rem;
-  padding: 0 0 0.7rem;
+  gap: 0.55rem;
+  padding: 0 0 0.45rem;
   border-bottom: 1px solid rgba(245, 158, 11, 0.24);
 }
 
@@ -362,25 +362,25 @@ body::before {
   display: flex;
   justify-content: center;
   width: 100%;
-  min-height: 82px;
-  padding: 0.95rem 0.75rem;
+  min-height: 70px;
+  padding: 0.65rem 0.65rem;
 }
 
 .radio-status-bank {
   display: flex;
   width: 100%;
   min-width: 150px;
-  min-height: 82px;
+  min-height: 70px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
-  padding: 0.45rem 0.6rem;
+  padding: 0.35rem 0.5rem;
 }
 
 .radio-meter-section {
-  margin-top: 0.75rem;
-  padding: 0.72rem 0.8rem 0.62rem;
+  margin-top: 0.45rem;
+  padding: 0.52rem 0.68rem 0.48rem;
 }
 
 .radio-meter-section::before {
@@ -406,14 +406,14 @@ body::before {
   display: grid;
   grid-template-columns: max-content;
   justify-content: center;
-  gap: 0.2rem;
+  gap: 0.12rem;
   align-items: start;
 }
 
 .s-meter-gauges {
   display: grid;
   grid-template-columns: max-content repeat(2, max-content) max-content;
-  gap: 0.55rem;
+  gap: 0.48rem;
   justify-content: center;
   align-items: center;
 }
@@ -423,7 +423,7 @@ body::before {
   width: 66px;
   flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.22rem;
 }
 
 .s-meter-face {
@@ -458,24 +458,24 @@ body::before {
 }
 
 .s-meter-bank .s-meter-face {
-  width: min(128px, 100%);
+  width: min(118px, 100%);
 }
 
 .s-meter-bank .s-meter-dial-row {
-  grid-template-columns: minmax(112px, 128px);
-  gap: 0.85rem;
+  grid-template-columns: minmax(106px, 118px);
+  gap: 0.65rem;
 }
 
 .s-meter-bank .s-meter-dial-row.has-left-knob {
-  grid-template-columns: 66px minmax(112px, 128px);
+  grid-template-columns: 66px minmax(106px, 118px);
 }
 
 .s-meter-bank .s-meter-dial-row.has-right-knob {
-  grid-template-columns: minmax(112px, 128px) 66px;
+  grid-template-columns: minmax(106px, 118px) 66px;
 }
 
 .s-meter-bank .s-meter-dial-row.has-left-knob.has-right-knob {
-  grid-template-columns: 66px minmax(112px, 128px) 66px;
+  grid-template-columns: 66px minmax(106px, 118px) 66px;
 }
 
 .s-meter-bank .s-meter-knob-stack {
@@ -495,7 +495,7 @@ body::before {
 
 .mini-meter-face {
   position: relative;
-  width: 54px;
+  width: 48px;
   aspect-ratio: 1;
   overflow: hidden;
   border: 1px solid rgba(120, 53, 15, 0.78);
@@ -1042,7 +1042,7 @@ body::before {
   position: relative;
   height: 100%;
   max-height: calc(100vh - 2rem);
-  overflow-y: auto;
+  overflow: hidden;
   background: #06110d;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
@@ -1065,7 +1065,7 @@ body::before {
   border: 1px solid rgba(245, 158, 11, 0.2);
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.32);
-  padding: 0.65rem 0.7rem;
+  padding: 0.5rem 0.6rem;
 }
 
 .diagnostics-label {
@@ -1078,9 +1078,9 @@ body::before {
 
 .diagnostics-value {
   display: block;
-  margin-top: 0.25rem;
+  margin-top: 0.18rem;
   color: #fde68a;
-  font-size: 0.98rem;
+  font-size: 0.92rem;
   line-height: 1.25;
   word-break: break-word;
 }
@@ -1099,7 +1099,7 @@ body::before {
 
 .diagnostics-path {
   color: #86efac;
-  font-size: 2rem;
+  font-size: 1.72rem;
   line-height: 1;
   letter-spacing: 0.12em;
   text-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
@@ -1116,8 +1116,8 @@ body::before {
 }
 
 .diagnostics-link-light {
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 2.15rem;
+  height: 2.15rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1158,7 +1158,7 @@ body::before {
 
 .diagnostics-progress-track {
   width: 100%;
-  height: 10px;
+  height: 8px;
   border-radius: 999px;
   overflow: hidden;
   border: 1px solid rgba(34, 197, 94, 0.24);
