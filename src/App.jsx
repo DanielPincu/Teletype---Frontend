@@ -62,11 +62,11 @@ export default function App() {
                 </span>
                 {syncCode ? (
                   <span className="channel-sync-help status-indicator-blink" style={{ animationDuration: '2s' }}>
-                    Share this security code with your peer
+                    Verify this security code with your peer
                   </span>
                 ) : (
                   <span className="channel-sync-help channel-sync-help-placeholder">
-                    Share this security code with your peer
+                    Verify this security code with your peer
                   </span>
                 )}
               </div>

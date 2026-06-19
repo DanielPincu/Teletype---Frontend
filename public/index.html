@@ -1,0 +1,1563 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Radioteletype Presentation</title>
+    <style>
+      :root {
+        --amber: #f59e0b;
+        --amber-soft: #fbbf24;
+        --amber-dim: #78350f;
+        --panel: rgba(25, 12, 3, 0.88);
+        --panel-2: rgba(10, 6, 2, 0.92);
+        --text: #fcd34d;
+        --muted: #d97706;
+        --line: rgba(245, 158, 11, 0.4);
+        --glow: rgba(251, 191, 36, 0.28);
+        --green: #22c55e;
+        --green-soft: rgba(0, 255, 150, 0.28);
+        --cyan: #22d3ee;
+        --red: #ef4444;
+        --shadow: rgba(0, 0, 0, 0.48);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at center, rgba(0, 255, 150, 0.28), transparent 60%),
+          radial-gradient(circle at 25% 15%, rgba(0, 255, 150, 0.22), transparent 40%),
+          radial-gradient(circle at 75% 45%, rgba(0, 255, 150, 0.18), transparent 50%),
+          linear-gradient(180deg, #000000, #000000);
+        color: var(--text);
+        font-family: "Share Tech Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        overflow: hidden;
+      }
+
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      body::before {
+        z-index: 0;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(0, 255, 150, 0.22), transparent 70%),
+          repeating-linear-gradient(
+            0deg,
+            rgba(0, 255, 150, 0.08) 0px,
+            rgba(0, 255, 150, 0.08) 1px,
+            transparent 1px,
+            transparent 3px
+          );
+        mix-blend-mode: screen;
+        opacity: 0.85;
+      }
+
+      body::after {
+        z-index: 2;
+        background:
+          radial-gradient(circle at center, transparent 55%, rgba(0, 0, 0, 0.38) 100%),
+          repeating-linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.035) 0px,
+            rgba(255, 255, 255, 0.035) 1px,
+            transparent 1px,
+            transparent 4px
+          );
+        opacity: 0.34;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      .deck {
+        position: relative;
+        z-index: 1;
+        min-height: 100%;
+        display: grid;
+        grid-template-columns: 230px minmax(0, 1fr);
+        grid-template-rows: auto 1fr auto;
+        padding: 20px 28px;
+        gap: 14px;
+        transition: grid-template-columns 180ms ease;
+        background:
+          linear-gradient(180deg, rgba(78, 39, 9, 0.28), rgba(12, 7, 3, 0.42)),
+          repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.018) 0,
+            rgba(255, 255, 255, 0.018) 2px,
+            transparent 2px,
+            transparent 8px
+          );
+      }
+
+      .deck.visual-collapsed {
+        grid-template-columns: 0 minmax(0, 1fr);
+        column-gap: 0;
+      }
+
+      .topbar,
+      .controls {
+        grid-column: 1 / -1;
+        width: 100%;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border: 1px solid rgba(245, 158, 11, 0.36);
+        border-radius: 8px;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.1), transparent 62%),
+          linear-gradient(180deg, rgba(22, 12, 4, 0.56), rgba(4, 2, 1, 0.52));
+        box-shadow:
+          inset 0 0 12px rgba(245, 158, 11, 0.1),
+          0 0 18px rgba(245, 158, 11, 0.06);
+        padding: 10px 14px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .signal {
+        position: relative;
+        width: 118px;
+        height: 42px;
+        border: 1px solid rgba(34, 211, 238, 0.34);
+        border-radius: 999px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.28), transparent 20%),
+          radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.12), transparent 55%),
+          linear-gradient(180deg, rgba(8, 18, 20, 0.92), rgba(0, 0, 0, 0.88));
+        box-shadow:
+          inset 0 0 14px rgba(34, 211, 238, 0.08),
+          0 0 20px rgba(34, 211, 238, 0.12);
+      }
+
+      .signal::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 1px;
+        height: 44px;
+        transform-origin: bottom center;
+        transform: translate(-50%, -100%);
+        background: linear-gradient(to top, rgba(34, 211, 238, 0.9), rgba(34, 211, 238, 0.2), transparent);
+        box-shadow: 0 0 12px rgba(34, 211, 238, 0.9);
+        animation: sweep 3s linear infinite;
+      }
+
+      .signal::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 14px;
+        height: 14px;
+        border-radius: 999px;
+        transform: translate(-50%, -50%);
+        background: #67e8f9;
+        box-shadow: 0 0 14px rgba(34, 211, 238, 1);
+      }
+
+      .eyebrow {
+        margin: 0;
+        color: var(--amber);
+        font-size: 11px;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+      }
+
+      .brand h1 {
+        margin: 2px 0 0;
+        font-size: clamp(24px, 3vw, 36px);
+        line-height: 1;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        text-shadow: 0 0 6px rgba(251, 191, 36, 0.65), 0 0 18px rgba(245, 158, 11, 0.2);
+      }
+
+      .timer {
+        display: grid;
+        justify-items: end;
+        gap: 6px;
+        min-width: 132px;
+      }
+
+      .time {
+        font-variant-numeric: tabular-nums;
+        font-size: 26px;
+        color: var(--green);
+        text-shadow: 0 0 8px rgba(34, 197, 94, 0.85);
+      }
+
+      .time.warning {
+        color: var(--amber);
+      }
+
+      .time.over {
+        color: var(--red);
+      }
+
+      .bar {
+        width: 132px;
+        height: 6px;
+        border: 1px solid rgba(245, 158, 11, 0.26);
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.46);
+        overflow: hidden;
+      }
+
+      .bar span {
+        display: block;
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(90deg, var(--green), var(--amber-soft));
+        box-shadow: 0 0 10px rgba(34, 197, 94, 0.45);
+      }
+
+      .stage {
+        grid-column: 2;
+        grid-row: 2;
+        width: 100%;
+        margin: 0 auto;
+        position: relative;
+        min-height: 0;
+      }
+
+      .persistent-visual {
+        grid-column: 1;
+        grid-row: 2;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 0;
+        padding: 4px;
+        border: 1px solid rgba(245, 158, 11, 0.38);
+        border-radius: 8px;
+        background: #ffffff;
+        box-shadow:
+          inset 0 0 18px rgba(245, 158, 11, 0.08),
+          0 14px 35px var(--shadow);
+        transition: opacity 180ms ease, visibility 180ms ease;
+      }
+
+      .deck.visual-collapsed .persistent-visual {
+        opacity: 0;
+        pointer-events: none;
+        visibility: hidden;
+      }
+
+      .persistent-visual::before {
+        content: "";
+        position: absolute;
+        inset: 8px;
+        z-index: 2;
+        pointer-events: none;
+        border: 1px solid rgba(245, 158, 11, 0.16);
+        border-radius: 6px;
+        box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.38);
+      }
+
+      .persistent-visual img {
+        position: relative;
+        z-index: 1;
+        width: 150%;
+        max-width: none;
+        height: 138%;
+        object-fit: contain;
+        object-position: center center;
+        border-radius: 5px;
+        transition: opacity 180ms ease, transform 180ms ease;
+      }
+
+      .visual-peek {
+        grid-column: 1;
+        grid-row: 2;
+        z-index: 4;
+        align-self: center;
+        justify-self: end;
+        display: grid;
+        place-items: center;
+        width: 18px;
+        height: 84px;
+        border: 1px solid rgba(245, 158, 11, 0.62);
+        border-right: 0;
+        border-radius: 8px 0 0 8px;
+        color: #fde68a;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.2), transparent 58%),
+          linear-gradient(180deg, rgba(84, 45, 12, 0.95), rgba(20, 10, 3, 0.98));
+        cursor: pointer;
+        box-shadow:
+          inset 0 0 10px rgba(245, 158, 11, 0.12),
+          0 0 14px rgba(245, 158, 11, 0.16);
+      }
+
+      .visual-peek::before {
+        content: "‹";
+        font-size: 22px;
+        line-height: 1;
+      }
+
+      .deck.visual-collapsed .visual-peek {
+        grid-column: 1 / -1;
+        justify-self: start;
+        display: grid;
+        border-right: 1px solid rgba(245, 158, 11, 0.62);
+        border-left: 0;
+        border-radius: 0 8px 8px 0;
+      }
+
+      .deck.visual-collapsed .visual-peek::before {
+        content: "›";
+      }
+
+      .visual-peek:disabled {
+        cursor: default;
+        opacity: 0.55;
+      }
+
+      .slide {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.92fr);
+        gap: 22px;
+        align-items: stretch;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(14px);
+        transition: opacity 180ms ease, transform 180ms ease;
+      }
+
+      .slide.active {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+      }
+
+      .slide.single-column {
+        grid-template-columns: 1fr;
+      }
+
+      .single-column .hero {
+        align-items: flex-start;
+      }
+
+      .single-column .hero p {
+        max-width: 980px;
+      }
+
+      .hero,
+      .side {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(245, 158, 11, 0.44);
+        border-radius: 8px;
+        background:
+          radial-gradient(circle at 50% 45%, rgba(251, 146, 60, 0.22), transparent 43%),
+          radial-gradient(circle at 20% 20%, rgba(253, 186, 116, 0.14), transparent 35%),
+          linear-gradient(180deg, rgba(85, 45, 13, 0.72), rgba(35, 18, 5, 0.84)),
+          repeating-linear-gradient(
+            90deg,
+            rgba(255, 230, 180, 0.035) 0,
+            rgba(255, 230, 180, 0.035) 1px,
+            transparent 1px,
+            transparent 7px
+          );
+        box-shadow:
+          inset 0 1px 0 rgba(255, 244, 214, 0.12),
+          inset 0 -12px 22px rgba(56, 22, 4, 0.42),
+          inset 0 0 28px rgba(251, 146, 60, 0.09),
+          0 14px 35px var(--shadow);
+      }
+
+      .hero::before,
+      .side::before {
+        content: "";
+        position: absolute;
+        inset: 8px;
+        pointer-events: none;
+        border: 1px solid rgba(245, 158, 11, 0.24);
+        border-radius: 6px;
+        box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.42);
+      }
+
+      .hero {
+        padding: clamp(24px, 4vw, 46px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 0;
+        gap: 0.45rem;
+      }
+
+      .hero h2 {
+        margin: 0 0 18px;
+        color: #fde68a;
+        font-size: clamp(32px, 4.8vw, 58px);
+        line-height: 0.95;
+        letter-spacing: 0;
+        text-wrap: balance;
+        text-shadow:
+          0 0 8px rgba(251, 191, 36, 0.44),
+          0 0 22px rgba(245, 158, 11, 0.16);
+      }
+
+      .hero p {
+        margin: 0;
+        color: #fbbf24;
+        font-size: clamp(18px, 2.1vw, 26px);
+        line-height: 1.4;
+        max-width: 820px;
+        text-shadow: 0 0 8px rgba(251, 191, 36, 0.16);
+      }
+
+      .side {
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 14px;
+        min-width: 0;
+      }
+
+      .kicker {
+        color: var(--green);
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        text-shadow: 0 0 8px rgba(34, 197, 94, 0.45);
+      }
+
+      .bullets {
+        display: grid;
+        gap: 12px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .bullets li {
+        display: grid;
+        grid-template-columns: 12px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        color: #fde68a;
+        font-size: clamp(16px, 1.6vw, 20px);
+        line-height: 1.35;
+        padding: 12px 14px;
+        border: 1px solid rgba(120, 53, 15, 0.58);
+        border-radius: 6px;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.1), transparent 62%),
+          linear-gradient(180deg, rgba(74, 38, 10, 0.36), rgba(20, 10, 3, 0.44)),
+          rgba(32, 16, 5, 0.34);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 244, 214, 0.08),
+          inset 0 0 18px rgba(251, 146, 60, 0.08);
+      }
+
+      .bullets li::before {
+        content: "";
+        width: 9px;
+        height: 9px;
+        margin-top: 6px;
+        border-radius: 999px;
+        background: var(--green);
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.85);
+      }
+
+      .deployment-list {
+        gap: 10px;
+      }
+
+      .deployment-list strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--green);
+        font-size: 0.92em;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-shadow: 0 0 8px rgba(34, 197, 94, 0.35);
+      }
+
+      .deployment-list span {
+        color: #fbbf24;
+      }
+
+      .tech-token {
+        white-space: nowrap;
+        color: #fde68a;
+        text-shadow: 0 0 8px rgba(251, 191, 36, 0.22);
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .card {
+        min-height: 120px;
+        padding: 16px;
+        border: 1px solid rgba(120, 53, 15, 0.58);
+        border-radius: 6px;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.1), transparent 62%),
+          linear-gradient(180deg, rgba(74, 38, 10, 0.36), rgba(20, 10, 3, 0.44)),
+          rgba(32, 16, 5, 0.34);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 244, 214, 0.08),
+          inset 0 0 18px rgba(251, 146, 60, 0.08);
+      }
+
+      .card strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--green);
+        text-shadow: 0 0 8px rgba(34, 197, 94, 0.35);
+      }
+
+      .card span {
+        color: #fbbf24;
+        line-height: 1.35;
+      }
+
+      .code-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0px;
+      }
+
+      .code-card {
+        min-height: 278px;
+        padding: 10px;
+        border: 1px solid rgba(120, 53, 15, 0.58);
+        border-radius: 6px;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.1), transparent 62%),
+          linear-gradient(180deg, rgba(74, 38, 10, 0.36), rgba(20, 10, 3, 0.44)),
+          rgba(32, 16, 5, 0.34);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 244, 214, 0.08),
+          inset 0 0 18px rgba(251, 146, 60, 0.08);
+      }
+
+      .code-card strong {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--green);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-shadow: 0 0 8px rgba(34, 197, 94, 0.35);
+      }
+
+      .code-card pre {
+        margin: 0;
+        overflow: hidden;
+        color: #d4d4d4;
+        font-size: clamp(11px, 1vw, 13px);
+        line-height: 1.45;
+        white-space: pre-wrap;
+        padding: 12px;
+        border: 1px solid rgba(34, 197, 94, 0.22);
+        border-radius: 6px;
+        background:
+          linear-gradient(180deg, rgba(30, 30, 30, 0.98), rgba(10, 10, 10, 0.98)),
+          #111111;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.04),
+          inset 0 0 18px rgba(0, 0, 0, 0.72);
+      }
+
+      .code-card code {
+        font-family: "Share Tech Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      }
+
+      .code-key {
+        color: #569cd6;
+      }
+
+      .code-string {
+        color: #ce9178;
+      }
+
+      .code-fn {
+        color: #dcdcaa;
+      }
+
+      .code-highlight {
+        display: inline-block;
+        padding: 0 4px;
+        border-radius: 4px;
+        color: #052e16;
+        background: linear-gradient(180deg, #86efac, #22c55e);
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.42);
+      }
+
+      .code-note {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(245, 158, 11, 0.24);
+        color: #fbbf24;
+        font-size: clamp(12px, 1.05vw, 14px);
+        line-height: 1.35;
+      }
+
+      .coturn-code-card {
+        min-height: 0;
+      }
+
+      .coturn-code-card pre {
+        max-height: 100%;
+        font-size: clamp(9px, 0.82vw, 11px);
+        line-height: 1.22;
+      }
+
+      .diagram {
+        display: grid;
+        gap: 12px;
+      }
+
+      .node {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px;
+        border: 1px solid rgba(120, 53, 15, 0.58);
+        border-radius: 6px;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.1), transparent 62%),
+          linear-gradient(180deg, rgba(74, 38, 10, 0.36), rgba(20, 10, 3, 0.44)),
+          rgba(32, 16, 5, 0.34);
+      }
+
+      .node button {
+        border: 1px solid rgba(245, 158, 11, 0.55);
+        border-radius: 6px;
+        color: #fde68a;
+        background: linear-gradient(180deg, rgba(84, 45, 12, 0.9), rgba(33, 17, 5, 0.95));
+        padding: 8px 10px;
+        cursor: pointer;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.08),
+          0 0 10px rgba(245, 158, 11, 0.08);
+      }
+
+      .node button[aria-pressed="true"] {
+        color: #052e16;
+        background: linear-gradient(180deg, #86efac, #22c55e);
+        border-color: rgba(34, 197, 94, 0.9);
+      }
+
+      .details {
+        min-height: 74px;
+        padding: 14px;
+        border: 1px solid rgba(245, 158, 11, 0.36);
+        border-radius: 6px;
+        color: #fbbf24;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.13), transparent 68%),
+          linear-gradient(180deg, rgba(22, 12, 4, 0.48), rgba(4, 2, 1, 0.38));
+        box-shadow:
+          inset 0 0 12px rgba(245, 158, 11, 0.1),
+          0 0 10px rgba(245, 158, 11, 0.05);
+        line-height: 1.4;
+      }
+
+      .stun-turn-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .network-panel {
+        position: relative;
+        min-height: 250px;
+        overflow: hidden;
+        border: 1px solid rgba(245, 158, 11, 0.42);
+        border-radius: 8px;
+        background:
+          radial-gradient(circle at 50% 46%, rgba(34, 197, 94, 0.16), transparent 34%),
+          radial-gradient(circle at 50% 76%, rgba(251, 191, 36, 0.14), transparent 30%),
+          linear-gradient(180deg, rgba(4, 23, 12, 0.58), rgba(0, 0, 0, 0.54));
+        box-shadow:
+          inset 0 0 18px rgba(34, 197, 94, 0.1),
+          0 0 14px rgba(34, 197, 94, 0.1);
+      }
+
+      .network-panel::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(circle at center, transparent 58%, rgba(0, 0, 0, 0.32)),
+          repeating-linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.035) 0px,
+            rgba(255, 255, 255, 0.035) 1px,
+            transparent 1px,
+            transparent 4px
+          );
+        opacity: 0.42;
+      }
+
+      .peer,
+      .server-node {
+        position: absolute;
+        z-index: 3;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(245, 158, 11, 0.48);
+        border-radius: 8px;
+        color: #fde68a;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        text-shadow: 0 0 8px rgba(251, 191, 36, 0.25);
+        background:
+          radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.13), transparent 68%),
+          linear-gradient(180deg, rgba(22, 12, 4, 0.72), rgba(4, 2, 1, 0.66));
+        box-shadow:
+          inset 0 0 12px rgba(245, 158, 11, 0.1),
+          0 0 14px rgba(245, 158, 11, 0.08);
+      }
+
+      .peer {
+        top: 94px;
+        width: 104px;
+        height: 68px;
+        font-size: 11px;
+      }
+
+      .peer::before {
+        content: "";
+        position: absolute;
+        top: 12px;
+        width: 52px;
+        height: 30px;
+        border: 1px solid rgba(34, 197, 94, 0.42);
+        border-radius: 4px;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.24), transparent 48%),
+          rgba(0, 0, 0, 0.52);
+      }
+
+      .peer span {
+        position: absolute;
+        bottom: 8px;
+      }
+
+      .peer-a {
+        left: 26px;
+      }
+
+      .peer-b {
+        right: 26px;
+      }
+
+      .server-node {
+        left: 50%;
+        transform: translateX(-50%);
+        width: 126px;
+        height: 48px;
+        font-size: 10px;
+      }
+
+      .stun-server {
+        top: 20px;
+        color: #bbf7d0;
+        border-color: rgba(34, 197, 94, 0.5);
+      }
+
+      .turn-server {
+        bottom: 18px;
+        color: #fde68a;
+        border-color: rgba(245, 158, 11, 0.56);
+      }
+
+      .network-svg {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .network-svg .direct {
+        fill: none;
+        stroke: rgba(34, 197, 94, 0.95);
+        stroke-width: 3;
+        filter: drop-shadow(0 0 6px rgba(34, 197, 94, 0.55));
+      }
+
+      .network-svg .stun {
+        fill: none;
+        stroke: rgba(34, 197, 94, 0.72);
+        stroke-width: 2;
+        stroke-dasharray: 7 7;
+        filter: drop-shadow(0 0 5px rgba(34, 197, 94, 0.35));
+      }
+
+      .network-svg .turn {
+        fill: none;
+        stroke: rgba(251, 191, 36, 0.95);
+        stroke-width: 3;
+        filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.42));
+      }
+
+      .path-label {
+        position: absolute;
+        left: 50%;
+        z-index: 5;
+        transform: translateX(-50%);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .direct-label {
+        top: 108px;
+        color: var(--green);
+        text-shadow: 0 0 8px rgba(34, 197, 94, 0.45);
+      }
+
+      .relay-label {
+        bottom: 72px;
+        color: var(--amber-soft);
+        text-shadow: 0 0 8px rgba(251, 191, 36, 0.38);
+      }
+
+      .stun-turn-cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .transfer-flow {
+        display: grid;
+        gap: 12px;
+      }
+
+      .transfer-strip {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr auto 1fr;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .transfer-step {
+        min-height: 112px;
+        padding: 14px;
+        border: 1px solid rgba(120, 53, 15, 0.58);
+        border-radius: 6px;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.1), transparent 62%),
+          linear-gradient(180deg, rgba(74, 38, 10, 0.36), rgba(20, 10, 3, 0.44)),
+          rgba(32, 16, 5, 0.34);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 244, 214, 0.08),
+          inset 0 0 18px rgba(251, 146, 60, 0.08);
+      }
+
+      .transfer-step strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--green);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-shadow: 0 0 8px rgba(34, 197, 94, 0.35);
+      }
+
+      .transfer-step span {
+        color: #fbbf24;
+        line-height: 1.35;
+      }
+
+      .transfer-arrow {
+        color: var(--green);
+        font-size: 28px;
+        text-shadow: 0 0 8px rgba(34, 197, 94, 0.55);
+      }
+
+      .chunk-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .chunk {
+        min-width: 42px;
+        padding: 5px 6px;
+        border: 1px solid rgba(34, 197, 94, 0.42);
+        border-radius: 4px;
+        color: #bbf7d0;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.18), transparent 60%),
+          rgba(0, 0, 0, 0.38);
+        font-size: 9px;
+        text-align: center;
+        text-transform: uppercase;
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.18);
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .chip {
+        padding: 8px 10px;
+        border: 1px solid rgba(245, 158, 11, 0.36);
+        border-radius: 999px;
+        color: #fbbf24;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.13), transparent 68%),
+          linear-gradient(180deg, rgba(22, 12, 4, 0.48), rgba(4, 2, 1, 0.38));
+        font-size: 13px;
+        text-shadow: 0 0 8px rgba(251, 191, 36, 0.18);
+      }
+
+      .slide-image-frame {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        border: 1px solid rgba(245, 158, 11, 0.42);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.45);
+        box-shadow:
+          inset 0 0 24px rgba(0, 0, 0, 0.82),
+          0 0 18px rgba(245, 158, 11, 0.08);
+      }
+
+      .slide-image-frame::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(circle at center, transparent 55%, rgba(0, 0, 0, 0.35) 100%),
+          repeating-linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.04) 0px,
+            rgba(255, 255, 255, 0.04) 1px,
+            transparent 1px,
+            transparent 4px
+          );
+        opacity: 0.45;
+      }
+
+      .slide-image {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .quote {
+        border-left: 3px solid var(--green);
+        padding-left: 16px;
+        color: #fde68a;
+        font-size: clamp(19px, 2vw, 25px);
+        line-height: 1.35;
+        text-shadow: 0 0 8px rgba(251, 191, 36, 0.18);
+      }
+
+      .controls {
+        min-height: 48px;
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn {
+        border: 1px solid rgba(245, 158, 11, 0.55);
+        border-radius: 8px;
+        color: #fde68a;
+        background: linear-gradient(180deg, rgba(84, 45, 12, 0.9), rgba(33, 17, 5, 0.95));
+        padding: 10px 14px;
+        cursor: pointer;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.08),
+          0 0 10px rgba(245, 158, 11, 0.08);
+      }
+
+      .btn:hover,
+      .btn:focus-visible {
+        border-color: var(--amber);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.12),
+          0 0 16px rgba(245, 158, 11, 0.16);
+        outline: none;
+      }
+
+      .dots {
+        display: flex;
+        gap: 7px;
+        align-items: center;
+      }
+
+      .dot {
+        width: 11px;
+        height: 11px;
+        border: 0;
+        border-radius: 999px;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        background: #2b1508;
+        box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.7);
+        cursor: pointer;
+        padding: 0;
+      }
+
+      .dot.active {
+        width: 26px;
+        background: var(--green);
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.85);
+      }
+
+      .meta {
+        color: #d97706;
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      @keyframes sweep {
+        from {
+          transform: translate(-50%, -100%) rotate(0deg);
+        }
+
+        to {
+          transform: translate(-50%, -100%) rotate(360deg);
+        }
+      }
+
+    </style>
+  </head>
+  <body>
+    <main class="deck">
+      <header class="topbar">
+        <div class="brand">
+          <div class="signal" aria-hidden="true"></div>
+          <div>
+            <p class="eyebrow">Web Technologies</p>
+            <h1>Radioteletype</h1>
+          </div>
+        </div>
+        <div class="timer" aria-label="Presentation timer">
+          <div class="time" id="time">05:00</div>
+          <div class="bar"><span id="timeBar"></span></div>
+        </div>
+      </header>
+
+      <aside class="persistent-visual">
+        <img src="./RTTY.png" alt="" />
+      </aside>
+      <button class="visual-peek" id="visualTogglePeek" type="button" aria-label="Expand picture"></button>
+
+      <section class="stage" aria-live="polite">
+        <article class="slide active">
+          <div class="hero">
+            <span class="kicker">Live project: radioteletype.net</span>
+            <h2>Browser Radio<br />for private communication</h2>
+            <p>
+              Radioteletype connects two users through WebRTC with live audio, video, chat,
+              screen sharing, and direct file transfer.
+            </p>
+          </div>
+          <aside class="side">
+            <div class="slide-image-frame">
+              <img class="slide-image" src="./rtty.jpg" alt="Radioteletype project interface" />
+            </div>
+            <div class="quote">
+              Inspired by classic radioteletype and tactical communication terminals, built with
+              modern <br> browser networking.
+            </div>
+            
+          </aside>
+        </article>
+
+        <article class="slide">
+          <div class="hero">
+            <span class="kicker">Purpose</span>
+            <h2>Fast communication.<br />Minimal identity.</h2>
+            <p>
+              The goal is a stateless peer-to-peer communication experience: no accounts,
+              no database, and no message history.
+            </p>
+          </div>
+          <aside class="side">
+            <ul class="bullets">
+              <li>Users either join a known room or find another available peer.</li>
+              <li>The server only coordinates connection setup.</li>
+              <li>Media and files move directly between browsers.</li>
+              <li>The interface exposes connection status, channel state, and signal feedback.</li>
+            </ul>
+          </aside>
+        </article>
+
+        <article class="slide">
+          <div class="hero">
+          
+            <h2>WebSockets introduces peers.<br /><br />WebRTC<br />carries data.</h2>
+            <p>
+              Radioteletype uses both because they solve different problems: one coordinates the
+              connection, the other moves real-time media and data between browsers.
+            </p>
+          </div>
+          <aside class="side">
+            <div class="cards">
+              <div class="card">
+                <strong>WebSocket</strong>
+                <span>A persistent browser-to-server connection. In this project it is the signaling line for room matching, offers, answers, and ICE candidates.</span>
+              </div>
+              <div class="card">
+                <strong>WebRTC</strong>
+                <span>A browser-to-browser real-time connection. It carries encrypted audio, video, chat, screen share, and X-FTP data channels.</span>
+              </div>
+              <div class="card">
+                <strong>Why both?</strong>
+                <span>Browsers need help finding each other first. After that, WebRTC can take over and avoid sending media through the backend.</span>
+              </div>
+              <div class="card">
+                <strong>Backend role</strong>
+                <span>The server stays lightweight: it coordinates setup, but it does not store accounts, messages, files, or call history.</span>
+              </div>
+            </div>
+          </aside>
+        </article>
+
+        <article class="slide">
+          <div class="hero">
+            <span class="kicker">Most important code</span>
+            <h2>The backend assigns roles.<br />The frontend starts WebRTC.</h2>
+            <p>
+              The backend decides who creates the offer. The frontend receives that role through
+              WebSocket signaling and starts the peer connection.
+            </p>
+          </div>
+          <aside class="side">
+            <div class="code-grid">
+              <div class="code-card">
+                <strong>Backend pairing</strong>
+                <pre><code>service.<span class="code-fn">pair</span>(ws, peer)
+
+<span class="code-fn">send</span>(ws, {
+  type: <span class="code-string">'peer-found'</span>,
+  peerId: peer.id,
+  initiator: <span class="code-highlight">true</span>,
+})
+
+<span class="code-fn">send</span>(peer, {
+  type: <span class="code-string">'peer-found'</span>,
+  peerId: ws.id,
+  initiator: <span class="code-highlight">false</span>,
+})</code></pre> <br><br><br>
+                <div class="code-note">
+                  Pairs two sockets and gives only one browser permission to create the WebRTC offer.
+                </div>
+              </div>
+              <div class="code-card">
+                <strong>Frontend signaling</strong>
+                <pre><code><span class="code-key">if</span> (msg.type === <span class="code-string">'peer-found'</span>) {
+  <span class="code-key">if</span> (!pc &amp;&amp; <span class="code-highlight">msg.initiator</span>) {
+    <span class="code-key">await</span> <span class="code-fn">startPeer</span>(<span class="code-highlight">true</span>, msg.peerId)
+  }
+}
+
+<span class="code-key">if</span> (<span class="code-highlight">isInitiator</span>) {
+  <span class="code-key">const</span> offer = <span class="code-key">await</span> pc.<span class="code-fn">createOffer</span>()
+  <span class="code-key">await</span> pc.<span class="code-fn">setLocalDescript</span>(offer)
+  <span class="code-fn">safeSend</span>({ type: <span class="code-string">'offer'</span>, target: peerId, sdp: offer })
+}</code></pre>
+                <div class="code-note">
+                  Reads the backend role, starts the peer connection, and sends the offer through WebSocket signaling.
+                </div>
+              </div>
+            </div>
+          </aside>
+        </article>
+
+        <article class="slide">
+          <div class="hero">
+            <span class="kicker">Connection flow</span>
+            <h2>Simple connection flow</h2>
+            <p>
+              The backend helps two browsers find each other. After the handshake, the session
+              moves into WebRTC for real-time communication.
+            </p>
+          </div>
+          <aside class="side">
+            <ul class="bullets deployment-list">
+              <li>
+                <span><strong>1. Select</strong> A user chooses random matching or locks onto a private channel.</span>
+              </li>
+              <li>
+                <span><strong>2. Handshake</strong> WebSocket signaling exchanges offers, answers, and network candidates.</span>
+              </li>
+              <li>
+                <span><strong>3. Verify</strong> A short sync code lets both users confirm they are in the same secure session.</span>
+              </li>
+              <li>
+                <span><strong>4. Communicate</strong> Audio, video, chat, screen share, and X-FTP file data move through WebRTC.</span>
+              </li>
+            </ul>
+          </aside>
+        </article>
+
+        <article class="slide">
+          <div class="hero">
+            <span class="kicker">Direct vs relay</span>
+            <h2>STUN discovers.<br />TURN relays.</h2>
+            <p>
+              Direct Mode is preferred because media travels peer-to-peer. Relay Mode exists
+              for networks where NAT or firewalls block that direct route.
+            </p>
+          </div>
+          <aside class="side">
+            <div class="stun-turn-grid">
+              <div class="network-panel">
+                <div class="peer peer-a"><span>User A</span></div>
+                <div class="peer peer-b"><span>User B</span></div>
+                <div class="server-node stun-server">STUN<br />discovery</div>
+                <div class="server-node turn-server">TURN<br />relay</div>
+                <svg class="network-svg" viewBox="0 0 600 265" preserveAspectRatio="none" aria-hidden="true">
+                  <defs>
+                    <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                      <path d="M0,0 L8,4 L0,8 Z" fill="rgba(34, 197, 94, 0.95)" />
+                    </marker>
+                    <marker id="arrow-green-start" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto">
+                      <path d="M8,0 L0,4 L8,8 Z" fill="rgba(34, 197, 94, 0.95)" />
+                    </marker>
+                    <marker id="arrow-amber" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                      <path d="M0,0 L8,4 L0,8 Z" fill="rgba(251, 191, 36, 0.95)" />
+                    </marker>
+                    <marker id="arrow-amber-start" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto">
+                      <path d="M8,0 L0,4 L8,8 Z" fill="rgba(251, 191, 36, 0.95)" />
+                    </marker>
+                  </defs>
+                  <path class="stun" d="M92 112 C170 72, 210 54, 262 46" marker-start="url(#arrow-green-start)" marker-end="url(#arrow-green)" />
+                  <path class="stun" d="M508 112 C430 72, 390 54, 338 46" marker-start="url(#arrow-green-start)" marker-end="url(#arrow-green)" />
+                  <path class="direct" d="M132 132 L468 132" marker-start="url(#arrow-green-start)" marker-end="url(#arrow-green)" />
+                  <path class="turn" d="M92 168 C160 208, 212 228, 262 232" marker-start="url(#arrow-amber-start)" marker-end="url(#arrow-amber)" />
+                  <path class="turn" d="M508 168 C440 208, 388 228, 338 232" marker-start="url(#arrow-amber-start)" marker-end="url(#arrow-amber)" />
+                </svg>
+                <div class="path-label direct-label">Direct media path</div>
+                <div class="path-label relay-label">Fallback relay path</div>
+              </div>
+              <div class="stun-turn-cards">
+                <div class="card"><strong>STUN</strong><span>Helps peers discover how they appear on the public internet. It does not carry the media.</span></div>
+                <div class="card"><strong>TURN</strong><span>Relays the media through the VPS when a direct peer-to-peer path cannot be established.</span></div>
+              </div>
+            </div>
+          </aside>
+        </article>
+
+        <article class="slide">
+          <div class="hero">
+            <span class="kicker">VPS deployment</span>
+            <h2>Self-hosted infrastructure<br />was part of <br>  the work.</h2>
+            <p>
+              The project runs on a configured VPS using Nginx, PM2, HTTPS/WSS, and a coturn
+              relay server for difficult networks.
+            </p>
+          </div>
+          <aside class="side">
+            <ul class="bullets deployment-list">
+              <li>
+                <span><strong>Backend runtime</strong> Node + PM2 keep the signaling server running.</span>
+              </li>
+              <li>
+                <span><strong>HTTPS/WSS</strong> Certbot and Let&apos;s Encrypt make browser camera, microphone, and WebSocket APIs work securely.</span>
+              </li>
+              <li>
+                <span><strong>TURN relay</strong> <span class="tech-token">turn.radioteletype.net:5349</span> uses TLS for Relay Mode when direct WebRTC fails.</span>
+              </li>
+              <li>
+                <span><strong>Firewall control</strong> Relay traffic is limited to <span class="tech-token">49160-49200</span> on <span class="tech-token">87.106.194.178</span> <br> so the firewall only opens a small port range.</span>
+              </li>
+            </ul>
+          </aside>
+        </article>
+
+        <article class="slide">
+          <div class="hero">
+            <span class="kicker">coturn configuration</span>
+            <h2>TLS-only TURN relay<br />for blocked networks.</h2>
+            <p>
+              coturn runs on the VPS as the fallback relay when two browsers cannot establish
+              a direct peer-to-peer path.
+            </p>
+          </div>
+          <aside class="side">
+            <div class="code-card coturn-code-card">
+              <strong>/etc/turnserver.conf</strong>
+              <pre><code><span class="code-string"># TURN SERVER CONFIG (TLS ONLY)</span>
+<span class="code-string"># =============================</span>
+
+<span class="code-string"># --- Network ---</span>
+listening-ip=<span class="code-highlight">87.106.194.178</span>
+relay-ip=<span class="code-highlight">87.106.194.178</span>
+external-ip=<span class="code-highlight">87.106.194.178</span>
+
+<span class="code-string"># --- Ports ---</span>
+listening-port=0
+tls-listening-port=<span class="code-highlight">5349</span>
+
+<span class="code-string"># Disable non-TLS completely</span>
+
+#do NOT accept non-encrypted TURN traffic. 
+
+no-udp
+no-tcp
+
+<span class="code-string"># --- Auth ---</span>
+realm=<span class="code-highlight">turn.radioteletype.net</span>
+server-name=<span class="code-highlight">turn.radioteletype.net</span>
+
+fingerprint
+lt-cred-mech
+
+user=rtty:<span class="code-highlight">[VERY SECRET PASSWORD]</span>
+
+<span class="code-string"># --- TLS ---</span>
+cert=/etc/letsencrypt/live/turn.radioteletype.net/fullchain.pem
+pkey=/etc/letsencrypt/live/turn.radioteletype.net/privkey.pem
+
+<span class="code-string"># --- Relay Ports ---</span>
+min-port=<span class="code-highlight">49160</span>
+max-port=<span class="code-highlight">49200</span>
+
+<span class="code-string"># --- Logging ---</span>
+verbose</code></pre>
+              <div class="code-note">
+                This locks TURN to TLS on port 5349 and restricts relay traffic to a small firewall range.
+              </div>
+            </div>
+          </aside>
+        </article>
+
+        <article class="slide">
+          <div class="hero">
+            <span class="kicker">X-FTP file transfer</span>
+            <h2>Chunked transfer.<br />Browser Blob.</h2>
+            <p>
+              X-FTP uses a dedicated ordered WebRTC DataChannel. The receiver accepts first,
+              then the file is streamed in 32 KB pieces with progress and speed feedback.
+            </p>
+          </div>
+          <aside class="side">
+            <div class="transfer-flow">
+              <div class="transfer-strip">
+                <div class="transfer-step">
+                  <strong>Offer</strong>
+                  <span>Sender shares filename, size, and MIME type. Receiver can accept, reject, or cancel.</span>
+                </div>
+                <div class="transfer-arrow">→</div>
+                <div class="transfer-step">
+                  <strong>Chunks</strong>
+                  <span>The file is sliced into 32 KB chunks and sent in order.</span>
+                  <div class="chunk-row">
+                    <span class="chunk">32 KB</span>
+                    <span class="chunk">32 KB</span>
+                    <span class="chunk">32 KB</span>
+                    <span class="chunk">32 KB</span>
+                  </div>
+                </div>
+                <div class="transfer-arrow">→</div>
+                <div class="transfer-step">
+                  <strong>Blob URL</strong>
+                  <span>Received chunks stay in browser memory, then become a Blob/object URL for open or download.</span>
+                </div>
+              </div>
+              <ul class="bullets deployment-list">
+                
+                <li>
+                  <span><strong>Not permanent storage</strong> Files are not saved to a server. Object URLs are revoked when removed or when the page unloads.</span>
+                </li>
+              </ul>
+            </div>
+          </aside>
+        </article>
+
+        <article class="slide single-column">
+          <div class="hero">
+            <span class="kicker">Runtime error  . . . Runtime error . . .  Runtime error</span>
+            <h2>MISSION ACCOMPLISHED!</h2>
+            
+            <div class="quote">
+              The project will be made open source after the exam, and will remain that way.
+              <br>  <br> 
+              Thank you for your attention! 
+            </div>
+            
+          </div>
+        </article>
+
+     
+      </section>
+
+      <footer class="controls">
+        <div class="nav">
+          <button class="btn" id="prev" type="button">Back</button>
+          <button class="btn" id="next" type="button">Next</button>
+          <button class="btn" id="fullscreen" type="button">Fullscreen</button>
+        </div>
+        <div class="dots" id="dots" aria-label="Slide navigation"></div>
+        <div class="meta"><span id="count">1 / 10</span> - arrows, space, number keys, or F</div>
+      </footer>
+
+    </main>
+
+    <script>
+      const slides = [...document.querySelectorAll(".slide")];
+      const deck = document.querySelector(".deck");
+      const dots = document.getElementById("dots");
+      const count = document.getElementById("count");
+      const time = document.getElementById("time");
+      const timeBar = document.getElementById("timeBar");
+      const fullscreenButton = document.getElementById("fullscreen");
+      const visualTogglePeek = document.getElementById("visualTogglePeek");
+      const storageKey = "radioteletype-presentation-slide";
+      const visualStorageKey = "radioteletype-presentation-visual-collapsed";
+      const duration = 5 * 60;
+      let index = Number(window.localStorage.getItem(storageKey)) || 0;
+      let visualCollapsed = window.localStorage.getItem(visualStorageKey) === "true";
+      let start = Date.now();
+
+      const details = {
+        frontend:
+          "React components manage the tactical UI, channel selector, video panel, chat, transfer drawer, diagnostics, and signal meters.",
+        backend:
+          "The Node/WebSocket backend is lightweight: it matches peers and forwards WebRTC offers, answers, and ICE candidates.",
+        network:
+          "Direct Mode uses STUN. Relay Mode uses the VPS coturn service at turns:turn.radioteletype.net:5349 when direct peer paths fail.",
+      };
+
+      function renderDots() {
+        dots.innerHTML = "";
+        slides.forEach((_, dotIndex) => {
+          const dot = document.createElement("button");
+          dot.className = "dot";
+          dot.type = "button";
+          dot.setAttribute("aria-label", `Go to slide ${dotIndex + 1}`);
+          dot.addEventListener("click", () => show(dotIndex));
+          dots.appendChild(dot);
+        });
+      }
+
+      function show(nextIndex) {
+        index = Math.max(0, Math.min(slides.length - 1, nextIndex));
+        const forceVisualOpen = index === 0 || index === slides.length - 1;
+        slides.forEach((slide, slideIndex) => {
+          slide.classList.toggle("active", slideIndex === index);
+        });
+        [...dots.children].forEach((dot, dotIndex) => {
+          dot.classList.toggle("active", dotIndex === index);
+        });
+        deck.classList.toggle("visual-collapsed", !forceVisualOpen && visualCollapsed);
+        const isCollapsed = deck.classList.contains("visual-collapsed");
+        visualTogglePeek.disabled = forceVisualOpen;
+        visualTogglePeek.setAttribute("aria-label", isCollapsed ? "Expand picture" : "Collapse picture");
+        count.textContent = `${index + 1} / ${slides.length}`;
+        window.localStorage.setItem(storageKey, String(index));
+      }
+
+      function updateTimer() {
+        const elapsed = Math.floor((Date.now() - start) / 1000);
+        const remaining = duration - elapsed;
+        const abs = Math.abs(remaining);
+        const minutes = String(Math.floor(abs / 60)).padStart(2, "0");
+        const seconds = String(abs % 60).padStart(2, "0");
+        time.textContent = `${remaining < 0 ? "+" : ""}${minutes}:${seconds}`;
+        time.classList.toggle("warning", remaining <= 60 && remaining >= 0);
+        time.classList.toggle("over", remaining < 0);
+        timeBar.style.width = `${Math.min(100, (elapsed / duration) * 100)}%`;
+      }
+
+      document.getElementById("prev").addEventListener("click", () => show(index - 1));
+      document.getElementById("next").addEventListener("click", () => show(index + 1));
+      function toggleVisual() {
+        if (index === 0 || index === slides.length - 1) return;
+        visualCollapsed = !visualCollapsed;
+        window.localStorage.setItem(visualStorageKey, String(visualCollapsed));
+        show(index);
+      }
+
+      visualTogglePeek.addEventListener("click", toggleVisual);
+      fullscreenButton.addEventListener("click", async () => {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+          return;
+        }
+
+        await document.documentElement.requestFullscreen();
+      });
+
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-detail]");
+        if (!button) return;
+        document.querySelectorAll("[data-detail]").forEach((item) => {
+          item.setAttribute("aria-pressed", String(item === button));
+        });
+        document.getElementById("detailBox").textContent = details[button.dataset.detail];
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowRight" || event.key === " ") show(index + 1);
+        if (event.key === "ArrowLeft") show(index - 1);
+        if (event.key.toLowerCase() === "f") fullscreenButton.click();
+        if (event.key.toLowerCase() === "r") {
+          start = Date.now();
+          updateTimer();
+        }
+        const numeric = Number(event.key);
+        if (numeric >= 1 && numeric <= slides.length) show(numeric - 1);
+      });
+
+      document.addEventListener("fullscreenchange", () => {
+        fullscreenButton.textContent = document.fullscreenElement ? "Exit fullscreen" : "Fullscreen";
+      });
+
+      renderDots();
+      show(index);
+      updateTimer();
+      setInterval(updateTimer, 1000);
+    </script>
+  </body>
+</html>

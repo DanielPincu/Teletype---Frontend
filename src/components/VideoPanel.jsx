@@ -21,9 +21,14 @@ function VideoScreen({
       if (stream) {
         videoRef.current.play().catch(() => {})
       }
+    }
+  }, [stream])
+
+  useEffect(() => {
+    if (videoRef.current) {
       videoRef.current.volume = volume
     }
-  }, [stream, volume])
+  }, [volume])
 
   return (
     <div className="crt-container h-full flex flex-col">
